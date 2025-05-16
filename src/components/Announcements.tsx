@@ -35,7 +35,7 @@ const Announcements = () => {
         {events.map((event) => (
           <div
             key={event.id}
-            className="odd:bg-secondColor even:bg-fourthColor rounded-md p-4"
+            className="border border-l-4 odd:border-l-firstColor even:border-l-thirdColor rounded-md p-4"
           >
             <Event
               title={event.title}

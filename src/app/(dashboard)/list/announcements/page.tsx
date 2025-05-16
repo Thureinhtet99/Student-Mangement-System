@@ -1,22 +1,24 @@
 import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
+import TableCard from "@/components/TableCard";
 import TableSearch from "@/components/TableSearch";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { announcementColumns } from "@/data/columns";
 import { announcementsData, role } from "@/lib/data";
 import { AnnouncementType } from "@/types";
 import Image from "next/image";
 
 const AnnouncementListPage = () => {
-  const renderRow = (item: AnnouncementType) => (
-    <tr
-      key={item.id}
-      className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-fourthColor"
-    >
-      <td className="flex items-center gap-4 p-4">{item.title}</td>
-      <td>{item.class}</td>
-      <td className="hidden md:table-cell">{item.date}</td>
-      <td>
+  const renderRow = (item: AnnouncementType, index: number) => (
+    <TableRow key={item.id}>
+      <TableCell>{index + 1}</TableCell>
+      <TableCell className="flex items-center gap-4 p-4">
+        {item.title}
+      </TableCell>
+      <TableCell>{item.class}</TableCell>
+      <TableCell className="hidden md:table-cell">{item.date}</TableCell>
+      <TableCell>
         <div className="flex items-center gap-2">
           {role === "admin" && (
             <>
@@ -25,41 +27,20 @@ const AnnouncementListPage = () => {
             </>
           )}
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 
   return (
-    <div className="bg-white py-4 px-2 rounded-md flex-1 m-4 mt-0">
-      {/* TOP */}
-      <div className="flex items-center justify-between">
-        <h1 className="hidden md:block text-lg font-semibold">
-          All Announcements
-        </h1>
-        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-          <TableSearch />
-          <div className="flex items-center gap-4 self-end">
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/filter.png" alt="" width={14} height={14} />
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/sort.png" alt="" width={14} height={14} />
-            </button>
-            {role === "admin" && (
-              <FormModal table="announcement" type="create" />
-            )}
-          </div>
-        </div>
-      </div>
-      {/* LIST */}
-      <Table
-        columns={announcementColumns}
+    <>
+      <TableCard<AnnouncementType>
         renderRow={renderRow}
         data={announcementsData}
+        columns={announcementColumns}
+        title="All Announcements"
+        table="announcement"
       />
-      {/* PAGINATION */}
-      <Pagination />
-    </div>
+    </>
   );
 };
 

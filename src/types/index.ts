@@ -1,3 +1,15 @@
+export type PaginationType = {
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+};
+
+export type UserCardType = {
+  type: string;
+  count: number;
+  year?: string;
+};
+
 export type AnnouncementType = {
   id: number;
   title: string;
@@ -103,8 +115,7 @@ export type ResultType = {
   teacher: string;
   student: string;
   type: "exam" | "assignment";
+  // type: string;
   date: string;
   score: number;
 };
-
-

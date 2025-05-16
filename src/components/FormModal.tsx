@@ -3,6 +3,14 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { LoaderCircle, Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 // Loader
 const TeacherForm = dynamic(() => import("./forms/TeacherForm"), {
@@ -131,23 +139,14 @@ const FormModal = ({
   id?: number;
 }) => {
   const size = type === "create" ? "w-8 h-8" : "w-7 h-7";
-  const bgColor =
-    type === "create"
-      ? "secondColor"
-      : type === "update"
-      ? "thirdColor"
-      : "fourthColor";
   const icon =
     type === "create" ? (
       <Plus />
     ) : type === "update" ? (
       <Pencil size={16} />
     ) : (
-      <Trash2  size={16}/>
+      <Trash2 size={16} />
     );
-
-  // useState
-  const [open, setOpen] = useState(false);
 
   const Form = () => {
     return type === "delete" && id ? (
@@ -155,12 +154,9 @@ const FormModal = ({
         <span className="text-center font-medium">
           Are you sure you want to delete this {table}?
         </span>
-        <button
-          type="submit"
-          className="bg-red-500 text-white py-2 px-4 rounded-md border-none w-max self-center"
-        >
+        <Button variant="destructive" type="submit" className="self-center">
           Delete
-        </button>
+        </Button>
       </form>
     ) : type === "create" || type === "update" ? (
       forms[table](type, data)
@@ -170,27 +166,28 @@ const FormModal = ({
   };
 
   return (
-    <>
-      <button
-        className={`${size} flex items-center justify-center rounded-full border-2 p-2${bgColor}`}
-        onClick={() => setOpen(true)}
-      >
-        {icon}
-      </button>
-      {open && (
-        <div className="w-screen h-screen absolute left-0 top-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
-          <div className="bg-white p-4 rounded-md relative w-[90%] md:w-[70%] lg:w-[60%] xl:w-[50%] 2xl:w-[40%]">
-            <Form />
-            <div
-              className="absolute top-4 right-4 cursor-pointer"
-              onClick={() => setOpen(false)}
-            >
-              <X />
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button
+          variant="ghost"
+          className={`${size} flex items-center justify-center rounded-full`}
+        >
+          {icon}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {type === "create"
+              ? `Create ${table}`
+              : type === "update"
+              ? `Update ${table}`
+              : `Delete ${table}`}
+          </DialogTitle>
+        </DialogHeader>
+        <Form />
+      </DialogContent>
+    </Dialog>
   );
 };
 

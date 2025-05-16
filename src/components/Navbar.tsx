@@ -1,42 +1,49 @@
-import Image from "next/image";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Search, Bell, MessageCircleMore } from "lucide-react";
 
 const Navbar = () => {
   return (
     <>
-      <div className="flex items-center justify-between p-4">
-
+      <div className="flex items-center justify-between h-16 px-4">
         {/* SEARCH BAR */}
-        <div className="hidden lg:flex items-center text-sm gap-2 rounded-full ring-[1.5px] ring-gray-300 px-2">
-          <Image src="/search.png" alt="Search" width={16} height={16} />
-          <input
+        {/* <div className="hidden lg:flex items-center relative">
+          <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
             type="search"
-            placeholder="Search...."
-            className="w-[200px] p-2 bg-transparent outline-none"
+            placeholder="Search..."
+            className="w-[250px] pl-8 rounded-full bg-muted/30 border"
           />
-        </div>
+        </div> */}
 
         {/* ICONS AND USER */}
-        <div className="flex items-center gap-6 w-full justify-end">
-          <div className="bg-white rounded-full w-7 h-7 flex items-center justify-center cursor-pointer">
-            <Image src="/message.png" alt="Message" width={20} height={20} />
-          </div>
-          <div className="bg-white rounded-full w-7 h-7 flex items-center justify-center cursor-pointer relative">
-            <Image src="/announcement.png" alt="" width={20} height={20} />
-            <div className="absolute -top-3 -right-3 w-5 h-5 flex items-center justify-center bg-purple-500 text-white rounded-full text-xs">
+        <div className="flex items-center gap-4 ml-auto">
+          <Button size="icon" variant="ghost" className="rounded-full">
+            <MessageCircleMore className="h-5 w-5" />
+            <span className="sr-only">Messages</span>
+          </Button>
+
+          <Button size="icon" variant="ghost" className="rounded-full relative">
+            <Bell className="h-5 w-5" />
+            <Badge className="absolute -right-1 -top-1 h-4 w-4 p-0 flex items-center justify-center">
               1
+            </Badge>
+            <span className="sr-only">Notifications</span>
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col items-end">
+              <span className="font-medium text-sm">John Doe</span>
+              <span className="text-xs text-muted-foreground">Admin</span>
             </div>
+
+            <Avatar>
+              <AvatarImage src="/avatar.png" alt="John Doe" />
+              <AvatarFallback>JD</AvatarFallback>
+            </Avatar>
           </div>
-          <div className="flex flex-col">
-            <span className="capitalize text-xs leading-3 font-medium">john doe</span>
-            <span className="text-[10px] text-gray-500 text-right">admin</span>
-          </div>
-          <Image
-            src="/avatar.png"
-            alt="Avatar"
-            width={36}
-            height={36}
-            className="rounded-full"
-          />
         </div>
       </div>
     </>

@@ -42,13 +42,13 @@ const EventCalendar = () => {
         {events.map((event) => (
           <div
             key={event.id}
-            className="p-5 rounded-md border-2 border-gray-100 border-t-4 odd:border-t-firstColor even:border-t-thirdColor"
+            className="p-4 rounded-md border border-gray-100 border-t-4 odd:border-t-firstColor even:border-t-thirdColor"
           >
             <Event
               title={event.title}
               time={event.time}
               description={event.description}
-              type="Events"
+              type="event"
             />
           </div>
         ))}

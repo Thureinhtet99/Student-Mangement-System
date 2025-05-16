@@ -1,13 +1,14 @@
-import Image from "next/image";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 const TableSearch = () => {
   return (
-    <div className="w-full md:w-auto flex items-center text-xs gap-2 rounded-full ring-[1.5px] ring-gray-300 px-2">
-      <Image src="/search.png" alt="Search" width={14} height={14} />
-      <input
+    <div className="relative w-full md:w-[260px]">
+      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      <Input
         type="search"
-        placeholder="Search...."
-        className="w-[200px] p-2 bg-transparent outline-none"
+        placeholder="Search..."
+        className="pl-8 h-9 rounded-md border border-input bg-background"
       />
     </div>
   );

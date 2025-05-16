@@ -1,4 +1,5 @@
 export const teacherColumns = [
+  { header: "#", accessor: "index" },
   { header: "Info", accessor: "info" },
   {
     header: "Teacher ID",
@@ -32,6 +33,7 @@ export const teacherColumns = [
 ];
 
 export const studentColumns = [
+  { header: "#", accessor: "index" },
   { header: "Info", accessor: "info" },
   {
     header: "Student ID",
@@ -49,6 +51,7 @@ export const studentColumns = [
 ];
 
 export const parentColumns = [
+  { header: "#", accessor: "index" },
   { header: "Info", accessor: "info" },
   {
     header: "Student Name",
@@ -69,6 +72,7 @@ export const parentColumns = [
 ];
 
 export const subjectColumns = [
+  { header: "#", accessor: "index" },
   {
     header: "Subject Name",
     accessor: "subject name",
@@ -83,6 +87,7 @@ export const subjectColumns = [
 ];
 
 export const classColumns = [
+  { header: "#", accessor: "index" },
   { header: "Class Name", accessor: "class name" },
   {
     header: "Capacity",
@@ -103,6 +108,7 @@ export const classColumns = [
 ];
 
 export const lessonColumns = [
+  { header: "#", accessor: "index" },
   { header: "Subject Name", accessor: "subject name" },
   {
     header: "Class",
@@ -116,7 +122,8 @@ export const lessonColumns = [
   { header: "Actions", accessor: "action" },
 ];
 
-export const examsColumns = [
+export const examColumns = [
+  { header: "#", accessor: "index" },
   { header: "Subject Name", accessor: "subject name" },
   {
     header: "Class",
@@ -136,6 +143,7 @@ export const examsColumns = [
 ];
 
 export const assignmentColumns = [
+  { header: "#", accessor: "index" },
   { header: "Subject Name", accessor: "subject name" },
   {
     header: "Class",
@@ -155,6 +163,7 @@ export const assignmentColumns = [
 ];
 
 export const resultColumns = [
+  { header: "#", accessor: "index" },
   { header: "Subject Name", accessor: "subject name" },
   {
     header: "Student",
@@ -184,6 +193,7 @@ export const resultColumns = [
 ];
 
 export const eventColumns = [
+  { header: "#", accessor: "index" },
   {
     header: "Title",
     accessor: "title",
@@ -211,6 +221,7 @@ export const eventColumns = [
 ];
 
 export const announcementColumns = [
+  { header: "#", accessor: "index" },
   {
     header: "Title",
     accessor: "title",
