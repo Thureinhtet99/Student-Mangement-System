@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import dynamic from "next/dynamic";
-import { LoaderCircle, Pencil, Plus, Trash2, X } from "lucide-react";
+import { LoaderCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -105,6 +104,7 @@ const forms: {
   teacher: (type, data) => <TeacherForm type={type} data={data} />,
   student: (type, data) => <StudentForm type={type} data={data} />,
   parent: (type, data) => <ParentForm type={type} data={data} />,
+  subject: (type, data) => <SubjectForm type={type} data={data} />,
   announcement: (type, data) => <AnnouncementForm type={type} data={data} />,
   assignment: (type, data) => <AssignmentForm type={type} data={data} />,
   attendance: (type, data) => <AttendanceForm type={type} data={data} />,
@@ -175,7 +175,7 @@ const FormModal = ({
           {icon}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="w-[90vw] max-w-[800px] sm:max-w-[600px] md:max-w-[700px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {type === "create"

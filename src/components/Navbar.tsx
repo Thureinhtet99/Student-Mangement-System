@@ -6,7 +6,7 @@ import { Search, Bell, MessageCircleMore } from "lucide-react";
 
 const Navbar = () => {
   return (
-    <>
+    <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b">
       <div className="flex items-center justify-between h-16 px-4">
         {/* SEARCH BAR */}
         {/* <div className="hidden lg:flex items-center relative">
@@ -46,7 +46,7 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

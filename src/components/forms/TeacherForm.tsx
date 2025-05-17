@@ -1,27 +1,31 @@
 "use client";
+
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import InputField from "../InputField";
 import { ArrowUpFromLine } from "lucide-react";
-
-const schema = z.object({
-  username: z.string().min(3, { message: "Username is required" }),
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters long" }),
-  firstName: z.string().min(1, { message: "First name is required" }),
-  lastName: z.string().min(1, { message: "Last name is required" }),
-  phone: z.string().min(1).optional(),
-  address: z.string().min(1).optional(),
-  birthday: z.date().optional(),
-  gender: z.enum(["male", "female"], { message: "Gender is required" }),
-  image: z.instanceof(File).optional(),
-});
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { teacherFormSchema } from "@/data/formSchema";
 
 // Schema type
-type Inputs = z.infer<typeof schema>;
+type Inputs = z.infer<typeof teacherFormSchema>;
 
 const TeacherForm = ({
   type,
@@ -30,140 +34,250 @@ const TeacherForm = ({
   type: "create" | "update";
   data?: any;
 }) => {
-  // useForm
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Inputs>({
-    resolver: zodResolver(schema),
+  const form = useForm<Inputs>({
+    resolver: zodResolver(teacherFormSchema),
+    defaultValues: {
+      username: data?.username || "",
+      email: data?.email || "",
+      password: data?.password || "",
+      firstName: data?.firstName || "",
+      lastName: data?.lastName || "",
+      phone: data?.phone || "",
+      address: data?.address || "",
+      gender: data?.gender || "male",
+      ...(data?.birthday && { birthday: new Date(data.birthday) }),
+    },
   });
 
   // onSubmit
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
-  });
+  const onSubmit = (values: Inputs) => {
+    console.log(values);
+  };
 
   return (
-    <form className="flex flex-col gap-8" onSubmit={onSubmit}>
-      {type === "create" ? (
-        <h1 className="text-xl font-semibold">Create a new teacher</h1>
-      ) : (
-        <h1 className="text-xl font-semibold">Update teacher</h1>
-      )}
-      <span className="text-sm text-gray-400 font-medium">
-        Authentication Information
-      </span>
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="Username"
-          name="username"
-          htmlFor="username"
-          defaultValue={data?.username}
-          register={register}
-          error={errors?.username}
-        />
-        <InputField
-          label="Email"
-          name="email"
-          htmlFor="email"
-          type="email"
-          defaultValue={data?.email}
-          register={register}
-          error={errors?.email}
-        />
-        <InputField
-          label="Password"
-          name="password"
-          htmlFor="password"
-          type="password"
-          defaultValue={data?.password}
-          register={register}
-          error={errors?.password}
-        />
-      </div>
-      <span className="text-sm text-gray-400 font-medium">
-        Personal Information
-      </span>
+    <Card className="w-full py-4">
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="First name"
-          name="firstName"
-          htmlFor="firstName"
-          defaultValue={data?.firstName}
-          register={register}
-          error={errors?.firstName}
-        />
-        <InputField
-          label="Last name"
-          name="lastName"
-          htmlFor="lastName"
-          defaultValue={data?.lastName}
-          register={register}
-          error={errors?.lastName}
-        />
-        <InputField
-          label="Phone"
-          name="phone"
-          htmlFor="phone"
-          type="number"
-          defaultValue={data?.phone}
-          register={register}
-        />
-        <InputField
-          label="Address"
-          name="address"
-          htmlFor="address"
-          defaultValue={data?.address}
-          register={register}
-        />
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label htmlFor="gender">Gender</label>
-          <select
-            id="gender"
-            {...register("gender")}
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            defaultValue={data?.gender}
-          >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
-          {errors.gender?.message && (
-            <p className="text-red-400 text-xs">
-              {errors.gender.message.toString()}
-            </p>
-          )}
-        </div>
-        <InputField
-          label="Birthday"
-          name="birthday"
-          htmlFor="birthday"
-          type="date"
-          defaultValue={data?.birthday}
-          register={register}
-        />
-        <div className="flex flex-col gap-2 justify-center rounded-md p-2 w-full md:w-1/4">
-          <label
-            htmlFor="image"
-            className="text-sm text-gray-500 flex items-center gap-2 cursor-pointer"
-          >
-            <ArrowUpFromLine />
-            <span>Upload a photo</span>
-          </label>
-          <input
-            type="file"
-            id="image"
-            {...register("image")}
-            className="hidden"
-          />
-        </div>
-      </div>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-      <button className="bg-blue-500 text-white p-2 rounded-md" type="submit">
-        {type === "create" ? "Create" : "Update"}
-      </button>
-    </form>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="First Name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Last Name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <Input type="tel" placeholder="Phone" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Address" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="gender"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gender</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="birthday"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Birthday</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        onChange={(e) => {
+                          const date = new Date(e.target.value);
+                          field.onChange(date);
+                        }}
+                        value={
+                          field.value instanceof Date
+                            ? field.value.toISOString().split("T")[0]
+                            : ""
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="image"
+                render={({ field: { value, onChange, ...field } }) => (
+                  <FormItem>
+                    <FormLabel>Profile Image</FormLabel>
+                    <FormControl>
+                      <div className="grid w-full gap-1.5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full flex items-center justify-center gap-2"
+                          onClick={() =>
+                            document.getElementById("image-upload")?.click()
+                          }
+                        >
+                          <ArrowUpFromLine className="h-4 w-4" />
+                          {value ? "Change photo" : "Upload photo"}
+                        </Button>
+                        {value && (
+                          <p className="text-xs text-muted-foreground mt-1 text-center">
+                            Selected file: {value.name}
+                          </p>
+                        )}
+                        <Input
+                          id="image-upload"
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              onChange(file);
+                            }
+                          }}
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="flex justify-end gap-x-2">
+              <Button
+                variant="destructive"
+                type="reset"
+                className="w-full md:w-auto"
+                onClick={() => form.reset()}
+              >
+                Reset
+              </Button>
+              <Button type="submit" className="w-full md:w-auto">
+                {type === "create" ? "Create" : "Update"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 
