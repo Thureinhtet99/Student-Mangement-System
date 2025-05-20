@@ -120,25 +120,130 @@ const SingleStudentPage = () => {
       <div className="w-full xl:w-1/3 flex flex-col gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Shortcuts</CardTitle>
+            <CardTitle>Student Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2 flex-wrap">
-              <Button variant="secondary" asChild size="sm">
-                <Link href="/">Teacher&apos;s Students</Link>
-              </Button>
-              <Button variant="outline" asChild size="sm">
-                <Link href="/">Teacher&apos;s Lessons</Link>
-              </Button>
-              <Button variant="secondary" asChild size="sm">
-                <Link href="/">Teacher&apos;s Exams</Link>
-              </Button>
-              <Button variant="outline" asChild size="sm">
-                <Link href="/">Teacher&apos;s Assignments</Link>
-              </Button>
+            <div className="space-y-4">
+              {/* Attendance Section */}
+              <div>
+                <h3 className="font-medium mb-2 flex items-center justify-between">
+                  <span className="flex items-center">
+                    <Calendar1 className="h-4 w-4 mr-1" /> Attendances
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {new Date().toLocaleString("default", { month: "long" })}
+                  </span>
+                </h3>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div className="flex flex-col items-center p-3 rounded-md bg-green-50 border border-green-100">
+                    <span className="text-green-600 font-medium text-xl">
+                      18
+                    </span>
+                    <span className="text-xs text-green-800">Present</span>
+                  </div>
+                  <div className="flex flex-col items-center p-3 rounded-md bg-red-50 border border-red-100">
+                    <span className="text-red-600 font-medium text-xl">2</span>
+                    <span className="text-xs text-red-800">Absent</span>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-green-500 h-full"
+                    style={{ width: "90%" }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>90% attendance rate</span>
+                  <span>20 school days</span>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Assignments Section */}
+              {/* <div>
+                <h3 className="font-medium mb-2">Assignments</h3>
+                <div className="space-y-2 mb-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Math Homework</span>
+                    <Badge variant="secondary">Due in 2 days</Badge>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Science Project</span>
+                    <Badge variant="destructive">Overdue</Badge>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>English Essay</span>
+                    <Badge>Completed</Badge>
+                  </div>
+                </div>
+                <Button variant="outline" asChild size="sm" className="w-full">
+                  <Link href="/assignments/student-id">
+                    View All Assignments
+                  </Link>
+                </Button>
+              </div> */}
+
+              {/* <Separator /> */}
+
+              {/* Student Information Section */}
+              <div>
+                <h3 className="font-medium mb-2">Student Information</h3>
+                <div className="space-y-2 mb-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Parent</span>
+                    <span className="font-medium">John & Mary Moran</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Class</span>
+                    <Badge variant="outline">Class 10-A</Badge>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Grade</span>
+                    <Badge variant="outline">10th Grade</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Results Section */}
+              <div>
+                <h3 className="font-medium mb-2">Recent Results</h3>
+                <div className="space-y-2 mb-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Math Midterm</span>
+                    <Badge variant={85 >= 70 ? "default" : "destructive"}>
+                      85/100
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Science Project</span>
+                    <Badge variant={92 >= 70 ? "default" : "destructive"}>
+                      92/100
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">English Essay</span>
+                    <Badge variant={78 >= 70 ? "default" : "destructive"}>
+                      78/100
+                    </Badge>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mt-2">
+                  <div
+                    className="bg-blue-500 h-full"
+                    style={{ width: "85%" }}
+                  ></div>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 text-center">
+                  85/100 Average Score
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
+
         <Performance />
         <Announcements />
       </div>

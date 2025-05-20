@@ -39,9 +39,9 @@ const StudentForm = ({
       username: data?.username || "",
       email: data?.email || "",
       password: data?.password || "",
-      firstName: data?.firstName || "",
-      lastName: data?.lastName || "",
+      name: data?.name || "",
       phone: data?.phone || "",
+      bloodType: data?.bloodType || "",
       address: data?.address || "",
       gender: data?.gender || "male",
       ...(data?.birthday && { birthday: new Date(data.birthday) }),
@@ -109,26 +109,12 @@ const StudentForm = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
-                name="firstName"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First Name</FormLabel>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="First Name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Last Name" {...field} />
+                      <Input placeholder="Name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -143,6 +129,20 @@ const StudentForm = ({
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
                       <Input type="tel" placeholder="Phone" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="bloodType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Blood Type</FormLabel>
+                    <FormControl>
+                      <Input type="text" placeholder="BloodType" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

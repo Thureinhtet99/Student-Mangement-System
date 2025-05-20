@@ -40,12 +40,9 @@ const ParentForm = ({
       username: data?.username || "",
       email: data?.email || "",
       password: data?.password || "",
-      firstName: data?.firstName || "",
-      lastName: data?.lastName || "",
+      name: data?.name || "",
       phone: data?.phone || "",
       address: data?.address || "",
-      gender: data?.gender || "male",
-      ...(data?.birthday && { birthday: new Date(data.birthday) }),
     },
   });
 
@@ -110,26 +107,12 @@ const ParentForm = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
-                name="firstName"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First Name</FormLabel>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="First Name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Last Name" {...field} />
+                      <Input placeholder="Name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -165,101 +148,49 @@ const ParentForm = ({
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gender</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="birthday"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Birthday</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        onChange={(e) => {
-                          const date = new Date(e.target.value);
-                          field.onChange(date);
-                        }}
-                        value={
-                          field.value instanceof Date
-                            ? field.value.toISOString().split("T")[0]
-                            : ""
+            <FormField
+              control={form.control}
+              name="image"
+              render={({ field: { value, onChange, ...field } }) => (
+                <FormItem>
+                  <FormLabel>Profile Image</FormLabel>
+                  <FormControl>
+                    <div className="grid w-full gap-1.5">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full flex items-center justify-center gap-2"
+                        onClick={() =>
+                          document.getElementById("image-upload")?.click()
                         }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="image"
-                render={({ field: { value, onChange, ...field } }) => (
-                  <FormItem>
-                    <FormLabel>Profile Image</FormLabel>
-                    <FormControl>
-                      <div className="grid w-full gap-1.5">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full flex items-center justify-center gap-2"
-                          onClick={() =>
-                            document.getElementById("image-upload")?.click()
+                      >
+                        <ArrowUpFromLine className="h-4 w-4" />
+                        {value ? "Change photo" : "Upload photo"}
+                      </Button>
+                      {value && (
+                        <p className="text-xs text-muted-foreground mt-1 text-center">
+                          Selected file: {value.name}
+                        </p>
+                      )}
+                      <Input
+                        id="image-upload"
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            onChange(file);
                           }
-                        >
-                          <ArrowUpFromLine className="h-4 w-4" />
-                          {value ? "Change photo" : "Upload photo"}
-                        </Button>
-                        {value && (
-                          <p className="text-xs text-muted-foreground mt-1 text-center">
-                            Selected file: {value.name}
-                          </p>
-                        )}
-                        <Input
-                          id="image-upload"
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              onChange(file);
-                            }
-                          }}
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                        }}
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end gap-x-2">
               <Button

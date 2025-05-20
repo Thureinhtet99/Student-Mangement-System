@@ -115,6 +115,33 @@ const forms: {
   result: (type, data) => <ResultForm type={type} data={data} />,
 };
 
+const FormContent = ({
+  table,
+  type,
+  data,
+  id,
+}: {
+  table: string;
+  type: "create" | "update" | "delete";
+  data?: any;
+  id?: number | string;
+}) => {
+  return type === "delete" && id ? (
+    <form action="" className="flex flex-col gap-4 p-4">
+      <span className="text-center font-medium">
+        Are you sure you want to delete this {table}?
+      </span>
+      <Button variant="destructive" type="submit" className="self-center">
+        Delete
+      </Button>
+    </form>
+  ) : type === "create" || type === "update" ? (
+    forms[table](type, data)
+  ) : (
+    "Form not found"
+  );
+};
+
 const FormModal = ({
   table,
   type,
@@ -136,9 +163,9 @@ const FormModal = ({
     | "announcement";
   type: "create" | "update" | "delete";
   data?: any;
-  id?: number;
+  id?: number | string;
 }) => {
-  const size = type === "create" ? "w-8 h-8" : "w-7 h-7";
+  const size = type === "create" ? "w-9 h-9" : "w-7 h-7";
   const icon =
     type === "create" ? (
       <Plus />
@@ -147,23 +174,6 @@ const FormModal = ({
     ) : (
       <Trash2 size={16} />
     );
-
-  const Form = () => {
-    return type === "delete" && id ? (
-      <form action="" className="flex flex-col gap-4 p-4">
-        <span className="text-center font-medium">
-          Are you sure you want to delete this {table}?
-        </span>
-        <Button variant="destructive" type="submit" className="self-center">
-          Delete
-        </Button>
-      </form>
-    ) : type === "create" || type === "update" ? (
-      forms[table](type, data)
-    ) : (
-      "Form not found"
-    );
-  };
 
   return (
     <Dialog>
@@ -180,12 +190,10 @@ const FormModal = ({
           <DialogTitle>
             {type === "create"
               ? `Create ${table}`
-              : type === "update"
-              ? `Update ${table}`
-              : `Delete ${table}`}
+              : type === "update" && `Update ${table}`}
           </DialogTitle>
         </DialogHeader>
-        <Form />
+        <FormContent table={table} type={type} data={data} id={id} />
       </DialogContent>
     </Dialog>
   );

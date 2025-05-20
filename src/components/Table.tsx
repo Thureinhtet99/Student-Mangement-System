@@ -17,7 +17,7 @@ const Table = ({
   data: any[];
 }) => {
   return (
-    <div className="rounded-md border mt-4">
+    <div className="rounded-md">
       <ShadcnTable>
         <TableHeader>
           <TableRow>
@@ -30,7 +30,7 @@ const Table = ({
         </TableHeader>
         <TableBody>
           {data.length === 0 ? (
-            <TableRow>
+            <TableRow >
               <TableCell
                 colSpan={columns.length}
                 className="text-center py-6 text-muted-foreground"

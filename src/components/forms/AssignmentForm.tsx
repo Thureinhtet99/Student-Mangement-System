@@ -1,169 +1,223 @@
 "use client";
+
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import InputField from "../InputField";
-import { ArrowUpFromLine } from "lucide-react";
-
-const schema = z.object({
-  username: z.string().min(3, { message: "Username is required" }),
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters long" }),
-  firstName: z.string().min(1, { message: "First name is required" }),
-  lastName: z.string().min(1, { message: "Last name is required" }),
-  phone: z.string().min(1).optional(),
-  address: z.string().min(1).optional(),
-  birthday: z.date().optional(),
-  gender: z.enum(["male", "female"], { message: "Gender is required" }),
-  image: z.instanceof(File).optional(),
-});
+import { assignmentFormSchema } from "@/data/formSchema";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 
 // Schema type
-type Inputs = z.infer<typeof schema>;
+type Inputs = z.infer<typeof assignmentFormSchema>;
 
 const AssignmentForm = ({
   type,
   data,
-}: {
+}: // subjects: [],
+// teachers: [],
+// lessons: [],
+{
   type: "create" | "update";
   data?: any;
+  // subjects: { id: number; name: string }[];
+  // lessons: { id: number; name: string }[];
+  // teachers: { id: string; name: string }[];
 }) => {
   // useForm
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Inputs>({
-    resolver: zodResolver(schema),
+  const form = useForm<Inputs>({
+    resolver: zodResolver(assignmentFormSchema),
+    defaultValues: {
+      title: data?.title,
+      // startDate: data?.startDate || null,
+      dueDate: data?.endDate || null,
+      lessonId: data?.classId,
+    },
   });
 
   // onSubmit
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
-  });
+  const onSubmit = (values: Inputs) => {
+    console.log(values);
+  };
 
   return (
-    <form className="flex flex-col gap-8" onSubmit={onSubmit}>
-      {type === "create" ? (
-        <h1 className="text-xl font-semibold">Create a new assignment</h1>
-      ) : (
-        <h1 className="text-xl font-semibold">Update assignment</h1>
-      )}
-      <span className="text-sm text-gray-400 font-medium">
-        Authentication Information
-      </span>
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="Username"
-          name="username"
-          htmlFor="username"
-          defaultValue={data?.username}
-          register={register}
-          error={errors?.username}
-        />
-        <InputField
-          label="Email"
-          name="email"
-          htmlFor="email"
-          type="email"
-          defaultValue={data?.email}
-          register={register}
-          error={errors?.email}
-        />
-        <InputField
-          label="Password"
-          name="password"
-          htmlFor="password"
-          type="password"
-          defaultValue={data?.password}
-          register={register}
-          error={errors?.password}
-        />
-      </div>
-      <span className="text-sm text-gray-400 font-medium">
-        Personal Information
-      </span>
+    <Card className="w-full py-4">
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter assignment title" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="First name"
-          name="firstName"
-          htmlFor="firstName"
-          defaultValue={data?.firstName}
-          register={register}
-          error={errors?.firstName}
-        />
-        <InputField
-          label="Last name"
-          name="lastName"
-          htmlFor="lastName"
-          defaultValue={data?.lastName}
-          register={register}
-          error={errors?.lastName}
-        />
-        <InputField
-          label="Phone"
-          name="phone"
-          htmlFor="phone"
-          type="number"
-          defaultValue={data?.phone}
-          register={register}
-        />
-        <InputField
-          label="Address"
-          name="address"
-          htmlFor="address"
-          defaultValue={data?.address}
-          register={register}
-        />
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label htmlFor="gender">Gender</label>
-          <select
-            id="gender"
-            {...register("gender")}
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            defaultValue={data?.gender}
-          >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
-          {errors.gender?.message && (
-            <p className="text-red-400 text-xs">
-              {errors.gender.message.toString()}
-            </p>
-          )}
-        </div>
-        <InputField
-          label="Birthday"
-          name="birthday"
-          htmlFor="birthday"
-          type="date"
-          defaultValue={data?.birthday}
-          register={register}
-        />
-        <div className="flex flex-col gap-2 justify-center rounded-md p-2 w-full md:w-1/4">
-          <label
-            htmlFor="image"
-            className="text-sm text-gray-500 flex items-center gap-2 cursor-pointer"
-          >
-            <ArrowUpFromLine />
-            <span>Upload a photo</span>
-          </label>
-          <input
-            type="file"
-            id="image"
-            {...register("image")}
-            className="hidden"
-          />
-        </div>
-      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="subjectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subjects</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subject" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {/* {lessons.map((lessonItem) => (
+                        <SelectItem key={lessonItem.id} value={lessonItem.name}>
+                          {lessonItem.name}
+                        </SelectItem>
+                      ))}
+                      {lessons.length === 0 && (
+                        <SelectItem value="no-classes" disabled>
+                          No classes available
+                        </SelectItem>
+                      )} */}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-      <button className="bg-blue-500 text-white p-2 rounded-md" type="submit">
-        {type === "create" ? "Create" : "Update"}
-      </button>
-    </form>
+              <FormField
+                control={form.control}
+                name="lessonId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Class</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select class" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {/* {lessons.map((lessonItem) => (
+                        <SelectItem key={lessonItem.id} value={lessonItem.name}>
+                          {lessonItem.name}
+                        </SelectItem>
+                      ))}
+                      {lessons.length === 0 && (
+                        <SelectItem value="no-classes" disabled>
+                          No classes available
+                        </SelectItem>
+                      )} */}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="lessonId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Teacher</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select teacher" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {/* {lessons.map((lessonItem) => (
+                        <SelectItem key={lessonItem.id} value={lessonItem.name}>
+                          {lessonItem.name}
+                        </SelectItem>
+                      ))}
+                      {lessons.length === 0 && (
+                        <SelectItem value="no-classes" disabled>
+                          No classes available
+                        </SelectItem>
+                      )} */}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="dueDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Due date</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        onChange={(e) => {
+                          const date = new Date(e.target.value);
+                          field.onChange(date);
+                        }}
+                        value={
+                          field.value instanceof Date
+                            ? field.value.toISOString().split("T")[0]
+                            : ""
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="flex justify-end gap-x-2">
+              <Button
+                variant="destructive"
+                type="reset"
+                className="w-full md:w-auto"
+                onClick={() => form.reset()}
+              >
+                Reset
+              </Button>
+              <Button type="submit" className="w-full md:w-auto">
+                {type === "create" ? "Create" : "Update"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 

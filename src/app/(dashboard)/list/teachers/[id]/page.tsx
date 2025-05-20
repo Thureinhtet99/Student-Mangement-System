@@ -18,7 +18,7 @@ const SingleTeacherPage = () => {
   // console.log(typeof id);
 
   return (
-    <div className="flex-1 flex flex-col gap-4 xl:flex-row py-2">
+    <div className="flex-1 flex flex-col gap-4 xl:flex-row p-2">
       {/* LEFT */}
       <div className="w-full xl:w-2/3">
         {/* TOP */}
@@ -122,26 +122,151 @@ const SingleTeacherPage = () => {
       {/* RIGHT */}
       <div className="w-full xl:w-1/3 flex flex-col gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Shortcuts</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Teacher&apos;s Students</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 flex-wrap">
-              <Button variant="secondary" asChild size="sm">
-                <Link href="/">Teacher&apos;s Students</Link>
-              </Button>
-              <Button variant="outline" asChild size="sm">
-                <Link href="/">Teacher&apos;s Lessons</Link>
-              </Button>
-              <Button variant="secondary" asChild size="sm">
-                <Link href="/">Teacher&apos;s Exams</Link>
-              </Button>
-              <Button variant="outline" asChild size="sm">
-                <Link href="/">Teacher&apos;s Assignments</Link>
-              </Button>
+          <CardContent className="p-0">
+            <div className="max-h-64 overflow-y-auto pr-1">
+              {/* Sample student data - replace with your actual data */}
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Link 
+                  href={`/list/students/${i+1}`} 
+                  key={i}
+                  className="flex items-center gap-3 p-3 hover:bg-muted/50 border-b last:border-b-0 group"
+                >
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage
+                      src={`https://i.pravatar.cc/150?img=${i + 10}`}
+                      alt={`Student ${i + 1}`}
+                    />
+                    <AvatarFallback>{`S${i + 1}`}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col flex-1">
+                    <span className="text-sm font-medium group-hover:text-primary transition-colors">
+                      Student Name {i + 1}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Grade {Math.floor(Math.random() * 12) + 1}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Add action for the button click
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="1" />
+                      <circle cx="12" cy="5" r="1" />
+                      <circle cx="12" cy="19" r="1" />
+                    </svg>
+                  </Button>
+                </Link>
+              ))}
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Teacher&apos;s Lessons</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="max-h-64 overflow-y-auto pr-1">
+              {/* Sample lesson data - replace with your actual data */}
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Link 
+                  href={`/list/lessons/${i+1}`}
+                  key={i}
+                  className="flex items-center gap-3 p-3 hover:bg-muted/50 border-b last:border-b-0 group"
+                >
+                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                    </svg>
+                  </div>
+                  <div className="flex flex-col flex-1">
+                    <span className="text-sm font-medium group-hover:text-primary transition-colors">
+                      {
+                        [
+                          "Mathematics",
+                          "Science",
+                          "English",
+                          "History",
+                          "Art",
+                          "Physical Education",
+                        ][i]
+                      }
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {
+                        [
+                          "Monday",
+                          "Tuesday",
+                          "Wednesday",
+                          "Thursday",
+                          "Friday",
+                        ][i % 5]
+                      }{" "}
+                      • {Math.floor(Math.random() * 12) + 1}:00{" "}
+                      {Math.random() > 0.5 ? "AM" : "PM"}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Add action for the button click
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="1" />
+                      <circle cx="12" cy="5" r="1" />
+                      <circle cx="12" cy="19" r="1" />
+                    </svg>
+                  </Button>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
         <Performance />
         <Announcements />
       </div>

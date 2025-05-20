@@ -1,6 +1,22 @@
+import {
+  Announcement,
+  Assignment,
+  Class,
+  Event,
+  Exam,
+  Lesson,
+  Parent,
+  Result,
+  Student,
+  Subject,
+  Teacher,
+} from "@prisma/client";
+
 export type PaginationType = {
   currentPage?: number;
-  totalPages?: number;
+  page?: number;
+  count?: number;
+  hasNextPage: boolean;
   onPageChange?: (page: number) => void;
 };
 
@@ -10,11 +26,8 @@ export type UserCardType = {
   year?: string;
 };
 
-export type AnnouncementType = {
-  id: number;
-  title: string;
-  class: string;
-  date: string;
+export type AnnouncementListType = Announcement & {
+  class: Class | null | undefined;
 };
 
 export type CustomTitleType = {
@@ -23,99 +36,42 @@ export type CustomTitleType = {
   marginY: string | "";
 };
 
-export type EventType = {
-  title: string;
-  time: string | "";
-  description: string | "";
-  type: string | "";
+// export type EventType = {
+//   title: string;
+//   time: string | "";
+//   description: string | "";
+//   type: string | "";
+// };
+
+export type EventListType = Event & { class: Class | null | undefined };
+
+export type TeacherListType = Teacher & { subjects: Subject[] } & {
+  classes: Class[];
+};
+export type StudentListType = Student;
+export type ParentListType = Parent & { students: Student[] };
+export type SubjectListType = Subject & { teachers: Teacher[] } & {
+  lessons: Lesson[];
 };
 
-export type EventListType = {
-  id: number;
-  title: string;
-  class: string;
-  date: string;
-  startTime: string;
-  endTime: string;
+export type ClassListType = Class & { teacher?: Teacher | null | undefined } & {
+  lessons: Lesson[];
+} & {
+  students: Student[];
 };
 
-export type TeacherType = {
-  id: number;
-  teacherId: string;
-  name: string;
-  email?: string | "";
-  photo: string;
-  phone?: string | "";
-  subjects: string[];
-  classes: string[];
-  address?: string | "";
+export type LessonListType = Lesson & { subject: Subject } & {
+  class: Class;
+} & { teacher: Teacher };
+
+export type ExamListType = Exam & {
+  lesson: { subject: Subject; class: Class; teacher: Teacher };
 };
 
-export type StudentType = {
-  id: number;
-  studentId: string;
-  name: string;
-  email?: string | "";
-  photo: string;
-  phone?: string | "";
-  grade: number;
-  class: string;
-  address?: string | "";
-};
-export type ParentType = {
-  id: number;
-  name: string;
-  students: string[];
-  email?: string | "";
-  phone?: string | "";
-  address?: string | "";
+export type AssignmentListType = Assignment & {
+  lesson: { subject: Subject; class: Class; teacher: Teacher };
 };
 
-export type SubjectType = {
-  id: number;
-  name: string;
-  teachers: string[];
-};
-
-export type ClassType = {
-  id: number;
-  name: string;
-  capacity: number;
-  grade: number;
-  supervisor: string;
-};
-
-export type LessonType = {
-  id: number;
-  subject: string;
-  class: string;
-  teacher: string;
-};
-
-export type ExamType = {
-  id: number;
-  subject: string;
-  class: string;
-  teacher: string;
-  date: string;
-};
-
-export type AssignmentType = {
-  id: number;
-  subject: string;
-  class: string;
-  teacher: string;
-  dueDate: string;
-};
-
-export type ResultType = {
-  id: number;
-  subject: string;
-  class: string;
-  teacher: string;
-  student: string;
-  type: "exam" | "assignment";
-  // type: string;
-  date: string;
-  score: number;
-};
+export type ResultListType = Result & {
+  exam: { lesson: Lesson; class: Class };
+} & { assignment: Assignment } & { student: Student };

@@ -40,8 +40,7 @@ const TeacherForm = ({
       username: data?.username || "",
       email: data?.email || "",
       password: data?.password || "",
-      firstName: data?.firstName || "",
-      lastName: data?.lastName || "",
+      name: data?.name || "",
       phone: data?.phone || "",
       address: data?.address || "",
       gender: data?.gender || "male",
@@ -110,26 +109,12 @@ const TeacherForm = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
-                name="firstName"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First Name</FormLabel>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="First Name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Last Name" {...field} />
+                      <Input placeholder="Name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
