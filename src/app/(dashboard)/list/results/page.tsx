@@ -1,5 +1,4 @@
-import { resultColumns } from "@/data/columns";
-import { role } from "@/lib/data";
+import { resultColumns } from "@/data/columns";import { role } from "@/lib/data";
 import FormModal from "@/components/FormModal";
 import { ResultListType } from "@/types";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -7,22 +6,28 @@ import TableCard from "@/components/TableCard";
 import { Button } from "@/components/ui/button";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
+import { dateFormat } from "@/lib/dataTimeFormat";
+import { auth } from "@clerk/nextjs/server";
 
-const renderRow = (item: ResultListType, index: number) => {
+const renderRow = async (item: ResultListType, index: number) => {
+  const { sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
   return (
     <TableRow key={item.id}>
       <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
-      {/* <TableCell>{item.subject || "-"}</TableCell> */}
-      <TableCell> {item.student.name} </TableCell>
-      <TableCell className="hidden md:table-cell">{item.score}</TableCell>
-      {/* <TableCell className="hidden lg:table-cell">{item.teacher}</TableCell> */}
-      <TableCell className="hidden md:table-cell">
-        {item.student.name}
+      <TableCell>{item.title || "-"}</TableCell>
+      <TableCell>{item.studentName}</TableCell>
+      <TableCell>{item.score}</TableCell>
+      <TableCell className="hidden lg:table-cell">
+        {item.teacherName || "-"}
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        {item.exam?.lesson?.class?.name}
+        {item.className || "-"}
       </TableCell>
-      {/* <TableCell className="hidden md:table-cell">{item.date}</TableCell> */}
+      <TableCell className="hidden lg:table-cell">
+        {item.startTime ? dateFormat(item.startTime) : "-"}
+      </TableCell>
       <TableCell>
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
@@ -49,7 +54,10 @@ const ResultListPage = async ({
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
 
-  const [results, count] = await prisma.$transaction([
+  const { sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
+  const [resultsResponse, count] = await prisma.$transaction([
     prisma.result.findMany({
       where: {
         ...(queryParams.search && {
@@ -73,12 +81,38 @@ const ResultListPage = async ({
         }),
       },
       include: {
-        student: true,
+        student: { select: { name: true } },
         exam: {
-          include: { lesson: true },
+          select: {
+            title: true,
+            startTime: true,
+            lesson: {
+              select: {
+                class: {
+                  select: {
+                    name: true,
+                    teacher: true,
+                  },
+                },
+              },
+            },
+          },
         },
         assignment: {
-          include: { lesson: true },
+          select: {
+            title: true,
+            dueDate: true,
+            lesson: {
+              select: {
+                class: {
+                  select: {
+                    name: true,
+                    teacher: true,
+                  },
+                },
+              },
+            },
+          },
         },
       },
       take: ITEM_PER_PAGE,
@@ -109,7 +143,21 @@ const ResultListPage = async ({
     }),
   ]);
 
-  console.log(results);
+  const results = resultsResponse.map((item) => {
+    const assessment = item.exam || item.assignment;
+    const isExam = assessment && "startTime" in assessment;
+
+    return {
+      id: item.id,
+      score: item.score,
+
+      title: assessment?.title,
+      studentName: item.student.name,
+      teacherName: assessment?.lesson.class.teacher?.name,
+      className: assessment?.lesson.class.name,
+      startTime: isExam ? assessment.startTime : assessment?.dueDate,
+    };
+  });
 
   return (
     <>
@@ -122,6 +170,7 @@ const ResultListPage = async ({
         title="All Results"
         table="result"
         queryParams={queryParams}
+        role={role}
       />
     </>
   );

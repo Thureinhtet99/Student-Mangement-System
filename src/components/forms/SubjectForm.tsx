@@ -1,170 +1,291 @@
 "use client";
+
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import InputField from "../InputField";
-import { ArrowUpFromLine } from "lucide-react";
-
-
-const schema = z.object({
-  username: z.string().min(3, { message: "Username is required" }),
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters long" }),
-  firstName: z.string().min(1, { message: "First name is required" }),
-  lastName: z.string().min(1, { message: "Last name is required" }),
-  phone: z.string().min(1).optional(),
-  address: z.string().min(1).optional(),
-  birthday: z.date().optional(),
-  gender: z.enum(["male", "female"], { message: "Gender is required" }),
-  image: z.instanceof(File).optional(),
-});
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { subjectFormSchema } from "@/data/formSchema";
+import { useState } from "react";
+import { Check, ChevronsUpDown, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 
 // Schema type
-type Inputs = z.infer<typeof schema>;
+type Inputs = z.infer<typeof subjectFormSchema>;
 
 const SubjectForm = ({
   type,
   data,
+  teachers = [],
+  lessons = [],
 }: {
   type: "create" | "update";
   data?: any;
+  teachers?: { id: string; name: string }[];
+  lessons?: { id: number; name: string }[];
 }) => {
-  // useForm
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Inputs>({
-    resolver: zodResolver(schema),
+  const [selectedTeachers, setSelectedTeachers] = useState<string[]>(
+    data?.teachers?.map((t: any) => t.id) || []
+  );
+  const [selectedLessons, setSelectedLessons] = useState<number[]>(
+    data?.lessons?.map((l: any) => l.id) || []
+  );
+
+  const form = useForm<Inputs>({
+    resolver: zodResolver(subjectFormSchema),
+    defaultValues: {
+      name: data?.name || "",
+      // teacherIds: selectedTeachers,
+      // lessonIds: selectedLessons,
+    },
   });
 
   // onSubmit
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
-  });
+  const onSubmit = (values: Inputs) => {
+    console.log(values);
+  };
+
+  const handleTeacherSelect = (teacherId: string) => {
+    setSelectedTeachers((current) =>
+      current.includes(teacherId)
+        ? current.filter((id) => id !== teacherId)
+        : [...current, teacherId]
+    );
+  };
+
+  const handleLessonSelect = (lessonId: number) => {
+    setSelectedLessons((current) =>
+      current.includes(lessonId)
+        ? current.filter((id) => id !== lessonId)
+        : [...current, lessonId]
+    );
+  };
+
+  const removeTeacher = (teacherId: string) => {
+    setSelectedTeachers(selectedTeachers.filter((id) => id !== teacherId));
+  };
+
+  const removeLessonId = (lessonId: number) => {
+    setSelectedLessons(selectedLessons.filter((id) => id !== lessonId));
+  };
 
   return (
-    <form className="flex flex-col gap-8" onSubmit={onSubmit}>
-      {type === "create" ? (
-        <h1 className="text-xl font-semibold">Create a new subject</h1>
-      ) : (
-        <h1 className="text-xl font-semibold">Update subject</h1>
-      )}
-      <span className="text-sm text-gray-400 font-medium">
-        Authentication Information
-      </span>
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="Username"
-          name="username"
-          htmlFor="username"
-          defaultValue={data?.username}
-          register={register}
-          error={errors?.username}
-        />
-        <InputField
-          label="Email"
-          name="email"
-          htmlFor="email"
-          type="email"
-          defaultValue={data?.email}
-          register={register}
-          error={errors?.email}
-        />
-        <InputField
-          label="Password"
-          name="password"
-          htmlFor="password"
-          type="password"
-          defaultValue={data?.password}
-          register={register}
-          error={errors?.password}
-        />
-      </div>
-      <span className="text-sm text-gray-400 font-medium">
-        Personal Information
-      </span>
+    <Card className="w-full py-4">
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter subject name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="First name"
-          name="firstName"
-          htmlFor="firstName"
-          defaultValue={data?.firstName}
-          register={register}
-          error={errors?.firstName}
-        />
-        <InputField
-          label="Last name"
-          name="lastName"
-          htmlFor="lastName"
-          defaultValue={data?.lastName}
-          register={register}
-          error={errors?.lastName}
-        />
-        <InputField
-          label="Phone"
-          name="phone"
-          htmlFor="phone"
-          type="number"
-          defaultValue={data?.phone}
-          register={register}
-        />
-        <InputField
-          label="Address"
-          name="address"
-          htmlFor="address"
-          defaultValue={data?.address}
-          register={register}
-        />
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label htmlFor="gender">Gender</label>
-          <select
-            id="gender"
-            {...register("gender")}
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            defaultValue={data?.gender}
-          >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
-          {errors.gender?.message && (
-            <p className="text-red-400 text-xs">
-              {errors.gender.message.toString()}
-            </p>
-          )}
-        </div>
-        <InputField
-          label="Birthday"
-          name="birthday"
-          htmlFor="birthday"
-          type="date"
-          defaultValue={data?.birthday}
-          register={register}
-        />
-        <div className="flex flex-col gap-2 justify-center rounded-md p-2 w-full md:w-1/4">
-          <label
-            htmlFor="image"
-            className="text-sm text-gray-500 flex items-center gap-2 cursor-pointer"
-          >
-            <ArrowUpFromLine />
-            <span>Upload a photo</span>
-          </label>
-          <input
-            type="file"
-            id="image"
-            {...register("image")}
-            className="hidden"
-          />
-        </div>
-      </div>
+            <FormItem>
+              <FormLabel>Select Teachers</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn(
+                        "w-full justify-between",
+                        !selectedTeachers.length && "text-muted-foreground"
+                      )}
+                    >
+                      {selectedTeachers.length > 0
+                        ? `${selectedTeachers.length} teacher${
+                            selectedTeachers.length > 1 ? "s" : ""
+                          } selected`
+                        : "Select teachers"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Search teachers..." />
+                    <CommandEmpty>No teacher found.</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-y-auto">
+                      {teachers.map((teacher) => (
+                        <CommandItem
+                          key={teacher.id}
+                          value={teacher.name}
+                          onSelect={() => handleTeacherSelect(teacher.id)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedTeachers.includes(teacher.id)
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {teacher.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {selectedTeachers.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedTeachers.map((teacherId) => {
+                    const teacher = teachers.find((t) => t.id === teacherId);
+                    return (
+                      <Badge
+                        key={teacherId}
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        {teacher?.name}
+                        <X
+                          className="h-3 w-3 cursor-pointer"
+                          onClick={() => removeTeacher(teacherId)}
+                        />
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+              <FormDescription>
+                Select the teachers who will be teaching this subject.
+              </FormDescription>
+            </FormItem>
 
-      <button className="bg-blue-500 text-white p-2 rounded-md" type="submit">
-        {type === "create" ? "Create" : "Update"}
-      </button>
-    </form>
+            <FormItem>
+              <FormLabel>Select Lessons</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn(
+                        "w-full justify-between",
+                        !selectedLessons.length && "text-muted-foreground"
+                      )}
+                    >
+                      {selectedLessons.length > 0
+                        ? `${selectedLessons.length} lesson${
+                            selectedLessons.length > 1 ? "s" : ""
+                          } selected`
+                        : "Select lessons"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Search lessons..." />
+                    <CommandEmpty>No lesson found.</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-y-auto">
+                      {lessons.map((lesson) => (
+                        <CommandItem
+                          key={lesson.id}
+                          value={lesson.name}
+                          onSelect={() => handleLessonSelect(lesson.id)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedLessons.includes(lesson.id)
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {lesson.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {selectedLessons.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedLessons.map((lessonId) => {
+                    const lesson = lessons.find((l) => l.id === lessonId);
+                    return (
+                      <Badge
+                        key={lessonId}
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        {lesson?.name}
+                        <X
+                          className="h-3 w-3 cursor-pointer"
+                          onClick={() => removeLessonId(lessonId)}
+                        />
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+              <FormDescription>
+                Select the lessons associated with this subject.
+              </FormDescription>
+            </FormItem>
+
+            <div className="flex justify-end gap-x-2">
+              <Button
+                variant="destructive"
+                type="reset"
+                onClick={() => {
+                  form.reset();
+                  setSelectedTeachers([]);
+                  setSelectedLessons([]);
+                }}
+                // disabled={isLoading}
+              >
+                Reset
+              </Button>
+              <Button
+                type="submit"
+                // disabled={isLoading}
+              >
+                {type === "create" ? "Create" : "Update"}
+                {/* {isLoading
+                  ? "Processing..."
+                  : type === "create"
+                  ? "Create"
+                  : "Update"} */}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 

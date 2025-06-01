@@ -1,5 +1,4 @@
 import { parentColumns } from "@/data/columns";
-import { role } from "@/lib/data";
 import FormModal from "@/components/FormModal";
 import { ParentListType } from "@/types";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -7,22 +6,45 @@ import { Button } from "@/components/ui/button";
 import TableCard from "@/components/TableCard";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
+import { auth } from "@clerk/nextjs/server";
+import React from "react";
+import Link from "next/link";
 
-const renderRow = (item: ParentListType, index: number) => {
+const renderRow = async (item: ParentListType, index: number) => {
+  const { sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
   return (
     <TableRow key={item.id}>
       <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
       <TableCell>
-        <p className="font-medium">{item.name}</p>
-        <p className="text-xs text-muted-foreground">{item?.email || "-"}</p>
+        <p>{item.name}</p>
+        <p className="text-xs text-muted-foreground hidden md:table-cell">
+          {item?.email || "-"}
+        </p>
       </TableCell>
+      <TableCell>{item.id}</TableCell>
       <TableCell className="text-xs">
-        {item.students.map((student) => student.name).join(", ")}
+        {item.students.length > 0 ? (
+          item.students.map((student, index) => (
+            <React.Fragment key={student.id}>
+              <Link
+                href={`/list/students/${student.id}`}
+                className="hover:text-blue-800 hover:underline"
+              >
+                {student.name}
+              </Link>
+              {index < item.students.length - 1 && ", "}
+            </React.Fragment>
+          ))
+        ) : (
+          <span className="text-gray-500">No students assigned</span>
+        )}{" "}
       </TableCell>
       <TableCell className="hidden md:table-cell">
         {item?.phone || "-"}
       </TableCell>
-      <TableCell className="hidden md:table-cell">
+      <TableCell className="hidden lg:table-cell">
         {item?.address || "-"}
       </TableCell>
       <TableCell>
@@ -51,13 +73,23 @@ const ParentListPage = async ({
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
 
+  const { sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
   const [parents, count] = await prisma.$transaction([
     prisma.parent.findMany({
       where: {
         ...(queryParams.search && {
           OR: [
             { name: { contains: queryParams.search, mode: "insensitive" } },
-            { email: { contains: queryParams.search, mode: "insensitive" } },
+            { id: { contains: queryParams.search, mode: "insensitive" } },
+            {
+              students: {
+                some: {
+                  name: { contains: queryParams.search, mode: "insensitive" },
+                },
+              },
+            },
           ],
         }),
       },
@@ -70,7 +102,14 @@ const ParentListPage = async ({
         ...(queryParams.search && {
           OR: [
             { name: { contains: queryParams.search, mode: "insensitive" } },
-            { email: { contains: queryParams.search, mode: "insensitive" } },
+            { id: { contains: queryParams.search, mode: "insensitive" } },
+            {
+              students: {
+                some: {
+                  name: { contains: queryParams.search, mode: "insensitive" },
+                },
+              },
+            },
           ],
         }),
       },
@@ -88,6 +127,7 @@ const ParentListPage = async ({
         title="All Parents"
         table="parent"
         queryParams={queryParams}
+        role={role}
       />
     </>
   );

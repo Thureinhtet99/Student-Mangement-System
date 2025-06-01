@@ -51,14 +51,19 @@ async function main() {
   ];
 
   for (const subject of subjectData) {
-    await prisma.subject.create({ data: subject });
+    await prisma.subject.create({
+      data: {
+        ...subject,
+        classId: (subjectData.indexOf(subject) % 6) + 1, // Connect subjects to classes
+      },
+    });
   }
 
   // TEACHER
   for (let i = 1; i <= 15; i++) {
     await prisma.teacher.create({
       data: {
-        id: `teacher${i}`, // Unique ID for the teacher
+        id: `teacher${i}`,
         username: `teacher${i}`,
         name: `TName${i}`,
         email: `teacher${i}@example.com`,
@@ -66,10 +71,19 @@ async function main() {
         address: `Address${i}`,
         gender: i % 2 === 0 ? UserGender.MALE : UserGender.FEMALE,
         subjects: { connect: [{ id: (i % 10) + 1 }] },
-        classes: { connect: [{ id: (i % 6) + 1 }] },
         birthday: new Date(
           new Date().setFullYear(new Date().getFullYear() - 30)
         ),
+      },
+    });
+  }
+
+  // Update classes to assign teachers
+  for (let i = 1; i <= 6; i++) {
+    await prisma.class.update({
+      where: { id: i },
+      data: {
+        teacherId: `teacher${i}`,
       },
     });
   }
@@ -79,16 +93,7 @@ async function main() {
     await prisma.lesson.create({
       data: {
         name: `Lesson${i}`,
-        // day: Day[
-        //   Object.keys(Day)[
-        //     Math.floor(Math.random() * Object.keys(Day).length)
-        //   ] as keyof typeof Day
-        // ],
-        // startTime: new Date(new Date().setHours(new Date().getHours() + 1)),
-        // endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
         subjectId: (i % 10) + 1,
-        classId: (i % 6) + 1,
-        // teacherId: `teacher${(i % 15) + 1}`,
       },
     });
   }
@@ -117,7 +122,6 @@ async function main() {
         email: `student${i}@example.com`,
         phone: `987-654-321${i}`,
         address: `Address${i}`,
-        bloodType: "O-",
         gender: i % 2 === 0 ? UserGender.MALE : UserGender.FEMALE,
         parentId: `parentId${Math.ceil(i / 2) % 25 || 25}`,
         gradeId: (i % 6) + 1,
@@ -136,7 +140,7 @@ async function main() {
         title: `Exam ${i}`,
         startTime: new Date(new Date().setHours(new Date().getHours() + 1)),
         endTime: new Date(new Date().setHours(new Date().getHours() + 2)),
-        lessonId: (i % 30) + 1,
+        subjectId: (i % 10) + 1,
       },
     });
   }
@@ -146,20 +150,20 @@ async function main() {
     await prisma.assignment.create({
       data: {
         title: `Assignment ${i}`,
-        // startDate: new Date(new Date().setHours(new Date().getHours() + 1)),
         dueDate: new Date(new Date().setDate(new Date().getDate() + 1)),
-        lessonId: (i % 30) + 1,
+        subjectId: (i % 10) + 1,
       },
     });
   }
 
-  // RESULT
+  // RESULT - Fix to handle optional examId and assignmentId
   for (let i = 1; i <= 10; i++) {
     await prisma.result.create({
       data: {
         score: 90,
         studentId: `student${i}`,
-        ...(i <= 5 ? { examId: i } : { assignmentId: i - 5 }),
+        examId: i <= 5 ? i : 1,
+        assignmentId: i > 5 ? i - 5 : 1,
       },
     });
   }
@@ -171,7 +175,7 @@ async function main() {
         date: new Date(),
         present: true,
         studentId: `student${i}`,
-        lessonId: (i % 30) + 1,
+        classId: (i % 6) + 1,
       },
     });
   }

@@ -10,6 +10,12 @@ datasource db {
 model Admin {
   id       String @id
   username String @unique
+  // name      String
+  // email     String    @unique
+  // password  String
+  // role      AdminRole @default(ADMIN)
+  // createdAt DateTime  @default(now())
+  // updatedAt DateTime  @updatedAt
 }
 
 model Student {
@@ -19,19 +25,19 @@ model Student {
   email     String?    @unique
   phone     String?    @unique
   address   String?
-  bloodType String?
-  image     String?
   gender    UserGender
   birthday  DateTime?
+  image     String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  parentId    String?
-  parent      Parent?      @relation(fields: [parentId], references: [id])
-  classId     Int?
-  class       Class?       @relation(fields: [classId], references: [id])
-  gradeId     Int?
-  grade       Grade?       @relation(fields: [gradeId], references: [id])
+  parentId String?
+  parent   Parent? @relation(fields: [parentId], references: [id])
+  classId  Int?
+  class    Class?  @relation(fields: [classId], references: [id])
+  gradeId  Int?
+  grade    Grade?  @relation(fields: [gradeId], references: [id])
+
   attendances Attendance[]
   results     Result[]
 }
@@ -43,9 +49,9 @@ model Teacher {
   email     String?    @unique
   phone     String?    @unique
   address   String?
-  image     String?
   gender    UserGender
   birthday  DateTime?
+  image     String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -67,91 +73,109 @@ model Parent {
 }
 
 model Class {
-  id       Int    @id @default(autoincrement())
-  name     String @unique
-  capacity Int?
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  capacity  Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  teacherId     String?
-  teacher       Teacher?       @relation(fields: [teacherId], references: [id])
-  lessons       Lesson[]
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id])
+
   students      Student[]
+  subjects      Subject[]
   events        Event[]
   announcements Announcement[]
   attendances   Attendance[]
 }
 
 model Subject {
-  id   Int    @id @default(autoincrement())
-  name String @unique
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  teachers Teacher[]
-  lessons  Lesson[]
+  classId Int?
+  class   Class? @relation(fields: [classId], references: [id])
+
+  teachers    Teacher[]
+  lessons     Lesson[]
+  assignments Assignment[]
+  exams       Exam[]
 }
 
 model Lesson {
-  id   Int    @id @default(autoincrement())
-  name String
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  subjectId   Int
-  subject     Subject      @relation(fields: [subjectId], references: [id])
-  classId     Int
-  class       Class        @relation(fields: [classId], references: [id])
-  exams       Exam[]
-  assignments Assignment[]
-  // attendances Attendance[]
+  subjectId Int
+  subject   Subject @relation(fields: [subjectId], references: [id])
 }
 
 model Grade {
-  id    Int @id @default(autoincrement())
-  level Int @unique
+  id        Int      @id @default(autoincrement())
+  level     Int      @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   students Student[]
 }
 
 model Exam {
-  id        Int      @id @default(autoincrement())
-  title     String
-  startTime DateTime
-  endTime   DateTime
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  lessonId Int
-  lesson   Lesson   @relation(fields: [lessonId], references: [id])
-  results  Result[]
+  subjectId Int
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  results Result[]
 }
 
 model Assignment {
-  id      Int       @id @default(autoincrement())
-  title   String
-  dueDate DateTime?
+  id        Int       @id @default(autoincrement())
+  title     String
+  dueDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  lessonId Int
-  lesson   Lesson   @relation(fields: [lessonId], references: [id])
-  results  Result[]
+  subjectId Int
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  results   Result[]
 }
 
 model Result {
   id        Int      @id @default(autoincrement())
   score     Int
-  comments  String?
+  comment   String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  examId       Int?
-  exam         Exam?       @relation(fields: [examId], references: [id])
-  assignmentId Int?
-  assignment   Assignment? @relation(fields: [assignmentId], references: [id])
-  studentId    String
-  student      Student     @relation(fields: [studentId], references: [id])
+  examId       Int
+  exam         Exam       @relation(fields: [examId], references: [id])
+  assignmentId Int
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  studentId    String?
+  student      Student?   @relation(fields: [studentId], references: [id])
 }
 
 model Attendance {
-  id      Int      @id @default(autoincrement())
-  date    DateTime
-  present Boolean
+  id        Int      @id @default(autoincrement())
+  present   Boolean
+  date      DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   studentId String
   student   Student @relation(fields: [studentId], references: [id])
-  // lessonId  Int
-  // lesson    Lesson  @relation(fields: [lessonId], references: [id])
   classId   Int?
   Class     Class?  @relation(fields: [classId], references: [id])
 }
@@ -162,6 +186,8 @@ model Event {
   description String?
   startTime   DateTime?
   endTime     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   classId Int?
   class   Class? @relation(fields: [classId], references: [id])
@@ -172,6 +198,8 @@ model Announcement {
   title       String
   description String?
   date        DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   classId Int?
   class   Class? @relation(fields: [classId], references: [id])

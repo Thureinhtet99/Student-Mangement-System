@@ -68,6 +68,10 @@ export const parentFormSchema = z.object({
   image: z.instanceof(File).optional(),
 });
 
+export const subjectFormSchema = z.object({
+  name: z.string().nonempty({ message: "Name is required" }),
+});
+
 export const lessonFormSchema = z.object({
   name: z.string().nonempty({ message: "Name is required" }),
   subjectId: z.number().int().optional(),

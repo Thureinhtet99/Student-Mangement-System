@@ -6,25 +6,29 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
-import { role } from "@/lib/data";
-import { dateTimeFormat } from "@/lib/dataTimeFormat";
+import { dateFormat, timeFormat } from "@/lib/dataTimeFormat";
+import { auth } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
 
-const renderRow = (item: ExamListType, index: number) => {
+const renderRow = async (item: ExamListType) => {
+  const { sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
   return (
     <TableRow key={item.id}>
-      <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
       <TableCell>{item.title}</TableCell>
       <TableCell className="hidden md:table-cell">
-        {item.lesson.subject.name}
+        {item.subject.name}
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        {item.lesson.class.name}
+        {item.subject.class?.name}
       </TableCell>
       <TableCell className="hidden lg:table-cell">
-        {item.lesson.teacher.name}
+        {item.subject.class?.teacher?.name}
       </TableCell>
-      <TableCell>
-        {dateTimeFormat(item.startTime)} - {dateTimeFormat(item.endTime)}
+      <TableCell>{dateFormat(item.startTime)}</TableCell>
+      <TableCell className="hidden md:table-cell">
+        {timeFormat(item.startTime)} - {timeFormat(item.endTime)}
       </TableCell>
       <TableCell>
         <div className="flex justify-end items-center md:gap-2">
@@ -52,69 +56,112 @@ const ExamListPage = async ({
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
 
-  const [exams, count] = await prisma.$transaction([
-    prisma.exam.findMany({
-      where: {
-        ...(queryParams.search && {
-          OR: [
-            { title: { contains: queryParams.search, mode: "insensitive" } },
-            {
-              lesson: {
-                subject: {
-                  name: { contains: queryParams.search, mode: "insensitive" },
-                },
-              },
-            },
-          ],
-        }),
-      },
-      include: {
-        lesson: {
-          select: {
-            subject: { select: { name: true, id: true } },
-            class: {
-              select: {
-                name: true,
-                id: true,
-                teacherId: true,
-                capacity: true,
-                gradeId: true,
-              },
-            },
-            teacher: {
-              select: {
-                name: true,
-                id: true,
-                username: true,
-                email: true,
-                phone: true,
-                address: true,
-                image: true,
-                gender: true,
-                createdAt: true,
+  const { userId, sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
+  const whereClause = {
+    AND: [
+      {
+        OR: [
+          // Teacher
+          {
+            subject: {
+              class: {
+                teacher: { id: userId! },
               },
             },
           },
+          // Student
+          {
+            subject: {
+              class: {
+                students: {
+                  some: {
+                    id: userId!,
+                  },
+                },
+              },
+            },
+          },
+          // Parent
+          {
+            subject: {
+              class: {
+                students: {
+                  some: {
+                    parent: { id: userId! },
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
+      ...(queryParams.search
+        ? [
+            {
+              OR: [
+                {
+                  title: {
+                    contains: queryParams.search,
+                    mode: Prisma.QueryMode.insensitive,
+                  },
+                },
+                {
+                  subject: {
+                    name: {
+                      contains: queryParams.search,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+                {
+                  subject: {
+                    class: {
+                      name: {
+                        contains: queryParams.search,
+                        mode: Prisma.QueryMode.insensitive,
+                      },
+                    },
+                  },
+                },
+                {
+                  subject: {
+                    class: {
+                      teacher: {
+                        name: {
+                          contains: queryParams.search,
+                          mode: Prisma.QueryMode.insensitive,
+                        },
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          ]
+        : []),
+    ],
+  };
+
+  const [exams, count] = await prisma.$transaction([
+    prisma.exam.findMany({
+      where: whereClause,
+      include: {
+        subject: {
+          include: {
+            class: {
+              include: { teacher: true },
+            },
+          },
         },
+        results: true,
       },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
     prisma.exam.count({
-      where: {
-        ...(queryParams.search && {
-          OR: [
-            { title: { contains: queryParams.search, mode: "insensitive" } },
-            {
-              lesson: {
-                subject: {
-                  name: { contains: queryParams.search, mode: "insensitive" },
-                },
-              },
-            },
-          ],
-        }),
-      },
+      where: whereClause,
     }),
   ]);
 
@@ -129,6 +176,7 @@ const ExamListPage = async ({
         title="All Exams"
         table="exam"
         queryParams={queryParams}
+        role={role}
       />
     </>
   );

@@ -28,6 +28,7 @@ type TableCardProps<T> = {
   count: number;
   page: number;
   queryParams: { [key: string]: string | undefined };
+  role?: string;
 };
 
 const TableCard = <T extends Record<string, any>>({
@@ -39,11 +40,12 @@ const TableCard = <T extends Record<string, any>>({
   page,
   count,
   queryParams,
+  role,
 }: TableCardProps<T>) => {
   return (
     <>
-      <Card className="flex-1 overflow-y-auto">
-        <CardHeader className="py-1">
+      <Card className="flex-1 overflow-y-auto border-0">
+        <CardHeader className="py-4">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <CardTitle className="text-lg">{title}</CardTitle>
             <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
@@ -61,7 +63,12 @@ const TableCard = <T extends Record<string, any>>({
           </div>
         </CardHeader>
         <CardContent className="py-0">
-          <Table columns={columns} renderRow={renderRow} data={data} />
+          <Table
+            columns={columns}
+            renderRow={renderRow}
+            data={data}
+            role={role}
+          />
         </CardContent>
       </Card>
       <div className="my-2">

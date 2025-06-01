@@ -1,4 +1,3 @@
-import { role } from "@/lib/data";
 import FormModal from "@/components/FormModal";
 import { TeacherListType } from "@/types";
 import { Eye } from "lucide-react";
@@ -12,8 +11,12 @@ import { teacherColumns } from "@/data/columns";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import React from "react";
+import { auth } from "@clerk/nextjs/server";
 
-const renderRow = (item: TeacherListType, index: number) => {
+const renderRow = async (item: TeacherListType, index: number) => {
+  const { sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
   return (
     <TableRow key={item.id}>
       <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
@@ -21,14 +24,14 @@ const renderRow = (item: TeacherListType, index: number) => {
         <div className="flex items-center gap-x-3">
           <Avatar>
             <AvatarImage
-              src={item.image || "/noAvatar.png"}
+              src={item?.image || undefined}
               alt={item.name}
               className="object-cover"
             />
             <AvatarFallback>{item.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium">{item.name}</p>
+            <p>{item.name}</p>
             <p className="text-xs text-muted-foreground hidden md:table-cell">
               {item?.email || "-"}
             </p>
@@ -36,7 +39,7 @@ const renderRow = (item: TeacherListType, index: number) => {
         </div>
       </TableCell>
       <TableCell>{item.id}</TableCell>
-      <TableCell>
+      <TableCell className="hidden md:table-cell">
         {item.subjects.length > 3 ? (
           <>
             {item.subjects.slice(0, 3).map((subject) => (
@@ -58,7 +61,7 @@ const renderRow = (item: TeacherListType, index: number) => {
           </>
         ) : (
           <>
-            {item.subjects.map((subject, index) => (
+            {item.subjects.map((subject) => (
               <React.Fragment key={subject.id}>
                 <Badge
                   variant="secondary"
@@ -111,13 +114,30 @@ const TeacherListPage = async ({
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
 
+  const { sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
   const [teachers, count] = await prisma.$transaction([
     prisma.teacher.findMany({
       where: {
         ...(queryParams.search && {
           OR: [
             { name: { contains: queryParams.search, mode: "insensitive" } },
-            { email: { contains: queryParams.search, mode: "insensitive" } },
+            { id: { contains: queryParams.search, mode: "insensitive" } },
+            {
+              subjects: {
+                some: {
+                  name: { contains: queryParams.search, mode: "insensitive" },
+                },
+              },
+            },
+            {
+              classes: {
+                some: {
+                  name: { contains: queryParams.search, mode: "insensitive" },
+                },
+              },
+            },
           ],
         }),
       },
@@ -130,12 +150,27 @@ const TeacherListPage = async ({
         ...(queryParams.search && {
           OR: [
             { name: { contains: queryParams.search, mode: "insensitive" } },
-            { email: { contains: queryParams.search, mode: "insensitive" } },
+            { id: { contains: queryParams.search, mode: "insensitive" } },
+            {
+              subjects: {
+                some: {
+                  name: { contains: queryParams.search, mode: "insensitive" },
+                },
+              },
+            },
+            {
+              classes: {
+                some: {
+                  name: { contains: queryParams.search, mode: "insensitive" },
+                },
+              },
+            },
           ],
         }),
       },
     }),
   ]);
+
 
   return (
     <>
@@ -148,6 +183,7 @@ const TeacherListPage = async ({
         title="All Teachers"
         table="teacher"
         queryParams={queryParams}
+        role={role}
       />
     </>
   );

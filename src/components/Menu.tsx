@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { menuItems } from "../data/menuItems";
-import { role } from "@/lib/data";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -13,9 +12,25 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { useUser } from "@clerk/nextjs";
 
 const Menu = () => {
   const pathname = usePathname();
+  const { user } = useUser();
+  const role = user?.publicMetadata.role as string;
+
+  // Helper function to check if an item should be active
+  const isActive = (href: string) => {
+    // For home tab (root path), only exact match or dashboard-related paths
+    if (href === "/") {
+      // List of paths that should activate home tab
+      const homePaths = ["/", "/dashboard"];
+      return homePaths.includes(pathname) || pathname === `/${role}`;
+    }
+    
+    // For other tabs, check if pathname starts with href
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 
   return (
     <div className="mt-4 text-sm space-y-1">
@@ -43,7 +58,7 @@ const Menu = () => {
                         asChild
                         className={cn(
                           "justify-center lg:justify-start h-10 px-2 py-5 font-normal",
-                          pathname === i.href
+                          isActive(i.href)
                             ? "bg-accent text-accent-foreground"
                             : "hover:bg-accent hover:text-accent-foreground"
                         )}

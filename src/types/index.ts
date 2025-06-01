@@ -10,6 +10,8 @@ import {
   Student,
   Subject,
   Teacher,
+  Attendance,
+  Grade,
 } from "@prisma/client";
 
 export type PaginationType = {
@@ -17,7 +19,6 @@ export type PaginationType = {
   page?: number;
   count?: number;
   hasNextPage: boolean;
-  onPageChange?: (page: number) => void;
 };
 
 export type UserCardType = {
@@ -27,13 +28,13 @@ export type UserCardType = {
 };
 
 export type AnnouncementListType = Announcement & {
-  class: Class | null | undefined;
+  class?: Class | null | undefined;
 };
 
 export type CustomTitleType = {
   name: string;
-  fontSize: string | "";
-  marginY: string | "";
+  fontSize?: string | "";
+  marginY?: string | "";
 };
 
 // export type EventType = {
@@ -43,35 +44,73 @@ export type CustomTitleType = {
 //   type: string | "";
 // };
 
-export type EventListType = Event & { class: Class | null | undefined };
+export type EventListType = Event & { class?: Class | null };
 
-export type TeacherListType = Teacher & { subjects: Subject[] } & {
+export type TeacherListType = Teacher & {
+  subjects: Subject[];
   classes: Class[];
 };
-export type StudentListType = Student;
-export type ParentListType = Parent & { students: Student[] };
-export type SubjectListType = Subject & { teachers: Teacher[] } & {
-  lessons: Lesson[];
+
+export type StudentListType = Student & {
+  // parent: Parent | null;
+  class?: Class | null;
+  grade?: Grade | null;
+  attendances?: Attendance[];
+  results?: Result[];
 };
 
-export type ClassListType = Class & { teacher?: Teacher | null | undefined } & {
-  lessons: Lesson[];
-} & {
+export type ParentListType = Parent & {
   students: Student[];
 };
 
-export type LessonListType = Lesson & { subject: Subject } & {
-  class: Class;
-} & { teacher: Teacher };
+export type SubjectListType = Subject & {
+  teachers: Teacher[];
+  lessons: Lesson[];
+};
+
+export type ClassListType = Class & {
+  teacher?: Teacher | null;
+  subjects: Subject[];
+  students: Student[];
+  events: Event[];
+  announcements: Announcement[];
+  attendances: Attendance[];
+};
+
+export type LessonListType = Lesson & {
+  subject: Subject;
+  class: Class & { teacher?: Teacher | null };
+  exams?: Exam[];
+  assignments?: Assignment[];
+};
 
 export type ExamListType = Exam & {
-  lesson: { subject: Subject; class: Class; teacher: Teacher };
+  subject: Subject & {
+    class?: (Class & { teacher?: Teacher | null }) | null;
+  };
+  results: Result[];
 };
 
 export type AssignmentListType = Assignment & {
-  lesson: { subject: Subject; class: Class; teacher: Teacher };
+  subject: Subject & { class?: (Class & { teacher?: Teacher | null }) | null };
+  results: Result[];
 };
 
-export type ResultListType = Result & {
-  exam: { lesson: Lesson; class: Class };
-} & { assignment: Assignment } & { student: Student };
+export type ResultListType = {
+  id: number;
+  score: number;
+  title?: string;
+  studentName: string;
+  teacherName?: string;
+  className?: string;
+  startTime?: Date | null;
+};
+
+export type AttendanceListType = Attendance & {
+  student: Student;
+  class?: Class;
+};
+
+export type GradeListType = Grade & {
+  students: Student[];
+};

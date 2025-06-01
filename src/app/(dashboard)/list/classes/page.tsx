@@ -1,5 +1,4 @@
 import { classColumns } from "@/data/columns";
-import { role } from "@/lib/data";
 import FormModal from "@/components/FormModal";
 import { TableCell, TableRow } from "@/components/ui/table";
 import TableCard from "@/components/TableCard";
@@ -9,45 +8,49 @@ import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { Badge } from "@/components/ui/badge";
 import React from "react";
+import { auth } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
 
-const renderRow = (item: ClassListType, index: number) => {
+const renderRow = async (item: ClassListType) => {
+  const { sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
   return (
     <TableRow key={item.id}>
-      <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
-      <TableCell>{item.name}</TableCell>
-      <TableCell className="hidden lg:table-cell">
+      <TableCell>{item.name}</TableCell>  
+      <TableCell className="hidden md:table-cell">
         {item.capacity || "-"}
       </TableCell>
       <TableCell>{item.teacher?.name || "-"}</TableCell>
       <TableCell className="hidden lg:table-cell">
-        {item.lessons.length > 3 ? (
+        {item.subjects.length > 2 ? (
           <>
-            {item.lessons.slice(0, 3).map((lesson, index) => (
-              <React.Fragment key={lesson.id}>
+            {item.subjects.slice(0, 2).map((subject) => (
+              <React.Fragment key={subject.id}>
                 <Badge
                   variant="secondary"
-                  className="ml-1 mb-1 hover:bg-slate-200 cursor-pointer"
+                  className="ml-2 mb-1 hover:bg-slate-200 cursor-pointer"
                 >
-                  {lesson.name}
+                  {subject.name}
                 </Badge>
               </React.Fragment>
             ))}
             <Badge
               variant="secondary"
-              className="ml-1 mb-1 hover:bg-slate-200 cursor-pointer"
+              className="ml-2 mb-1 hover:bg-slate-200 cursor-pointer"
             >
-              +{item.lessons.length - 3} more
+              +{item.subjects.length - 2} more
             </Badge>
           </>
         ) : (
           <>
-            {item.lessons.map((lesson, index) => (
-              <React.Fragment key={lesson.id}>
+            {item.subjects.map((subject) => (
+              <React.Fragment key={subject.id}>
                 <Badge
                   variant="secondary"
-                  className="hover:bg-slate-200 cursor-pointer"
+                  className="ml-2 mb-1 hover:bg-slate-200 cursor-pointer"
                 >
-                  {lesson.name}
+                  {subject.name}
                 </Badge>
               </React.Fragment>
             ))}
@@ -63,7 +66,7 @@ const renderRow = (item: ClassListType, index: number) => {
               .join(", ")}
             <Badge
               variant="secondary"
-              className="ml-1 hover:bg-slate-200 cursor-pointer"
+              className="ml-2 mb-1 hover:bg-slate-200 cursor-pointer"
             >
               +{item.students.length - 3} more
             </Badge>
@@ -98,27 +101,64 @@ const ClassListPage = async ({
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
 
+  const { userId, sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
+  const whereClause = {
+    AND: [
+      {
+        OR: [
+          // Teacher
+          {
+            teacher: {
+              id: userId!,
+            },
+          },
+        ],
+      },
+      ...(queryParams.search
+        ? [
+            {
+              OR: [
+                {
+                  name: {
+                    contains: queryParams.search,
+                    mode: Prisma.QueryMode.insensitive,
+                  },
+                },
+
+                {
+                  teacher: {
+                    name: {
+                      contains: queryParams.search,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+              ],
+            },
+          ]
+        : []),
+    ],
+  };
   const [classes, count] = await prisma.$transaction([
     prisma.class.findMany({
-      where: {
-        ...(queryParams.search && {
-          OR: [{ name: { contains: queryParams.search, mode: "insensitive" } }],
-        }),
+      where: whereClause,
+      include: {
+        teacher: true,
+        subjects: true,
+        students: true,
+        events: true,
+        announcements: true,
+        attendances: true,
       },
-      include: { teacher: true, lessons: true, students: true },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
     prisma.class.count({
-      where: {
-        ...(queryParams.search && {
-          OR: [{ name: { contains: queryParams.search, mode: "insensitive" } }],
-        }),
-      },
+      where: whereClause,
     }),
   ]);
-
-  console.log(classes);
 
   return (
     <>
@@ -131,6 +171,7 @@ const ClassListPage = async ({
         title="All Classes"
         table="class"
         queryParams={queryParams}
+        role={role}
       />
     </>
   );

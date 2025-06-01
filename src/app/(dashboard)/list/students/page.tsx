@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { studentColumns } from "@/data/columns";
-import { role, studentsData } from "@/lib/data";
 import FormModal from "@/components/FormModal";
 import { Eye } from "lucide-react";
 import { StudentListType } from "@/types";
@@ -11,8 +10,12 @@ import TableCard from "@/components/TableCard";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { dateFormat } from "@/lib/dataTimeFormat";
+import { auth } from "@clerk/nextjs/server";
 
-const renderRow = (item: StudentListType, index: number) => {
+const renderRow = async (item: StudentListType, index: number) => {
+  const { sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
   return (
     <TableRow key={item.id}>
       <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
@@ -20,15 +23,15 @@ const renderRow = (item: StudentListType, index: number) => {
         <div className="flex items-center gap-x-3">
           <Avatar>
             <AvatarImage
-              src={item.image || "/noAvatar.png"}
+              src={item.image || undefined}
               alt={item.name}
               className="object-cover"
             />
             <AvatarFallback>{item.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium">{item.name}</p>
-            <p className="text-xs text-muted-foreground">
+            <p>{item.name}</p>
+            <p className="text-xs text-muted-foreground hidden md:table-cell">
               {item?.email || "-"}
             </p>
           </div>
@@ -36,17 +39,18 @@ const renderRow = (item: StudentListType, index: number) => {
       </TableCell>
       <TableCell>{item.id}</TableCell>
       <TableCell className="hidden md:table-cell">
-        {item.gradeId || "-"}
+        {item.class?.name || "-"}
+      </TableCell>
+      <TableCell className="hidden md:table-cell">
+        {item.grade?.level || "-"}
+      </TableCell>
+      <TableCell className="hidden lg:table-cell">
+        {item?.birthday ? dateFormat(item.birthday) : "-"}
       </TableCell>
       <TableCell className="hidden lg:table-cell">
         {item?.phone || "-"}
       </TableCell>
-      <TableCell className="hidden md:table-cell">
-        {item?.birthday ? dateFormat(item.birthday) : "-"}
-      </TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {item?.bloodType || "-"}
-      </TableCell>
+
       <TableCell>
         <div className="flex justify-end items-center md:gap-2">
           <Button variant="ghost" size="icon" asChild>
@@ -73,16 +77,30 @@ const StudentListPage = async ({
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
 
+  const { sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
   const [students, count] = await prisma.$transaction([
     prisma.student.findMany({
       where: {
         ...(queryParams.search && {
           OR: [
             { name: { contains: queryParams.search, mode: "insensitive" } },
-            { email: { contains: queryParams.search, mode: "insensitive" } },
+            { id: { contains: queryParams.search, mode: "insensitive" } },
+            {
+              class: {
+                name: { contains: queryParams.search, mode: "insensitive" },
+              },
+            },
+            ...(isNaN(parseInt(queryParams.search)) ? [] : [{
+              grade: {
+                level: { equals: parseInt(queryParams.search) },
+              },
+            }]),
           ],
         }),
       },
+      include: { class: true, grade: true },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
@@ -91,12 +109,23 @@ const StudentListPage = async ({
         ...(queryParams.search && {
           OR: [
             { name: { contains: queryParams.search, mode: "insensitive" } },
-            { email: { contains: queryParams.search, mode: "insensitive" } },
+            { id: { contains: queryParams.search, mode: "insensitive" } },
+            {
+              class: {
+                name: { contains: queryParams.search, mode: "insensitive" },
+              },
+            },
+            ...(isNaN(parseInt(queryParams.search)) ? [] : [{
+              grade: {
+                level: { equals: parseInt(queryParams.search) },
+              },
+            }]),
           ],
         }),
       },
     }),
   ]);
+
 
   return (
     <>
@@ -109,6 +138,7 @@ const StudentListPage = async ({
         title="All Students"
         table="student"
         queryParams={queryParams}
+        role={role}
       />
     </>
   );
