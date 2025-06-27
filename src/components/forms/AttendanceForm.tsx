@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowUpFromLine } from "lucide-react";
-import { announcementFormSchema } from "@/data/formSchema";
+import { announcementFormSchema } from "@/lib/formSchema";
 import { Button } from "@/components/ui/button";
 import {
   Form,

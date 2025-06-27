@@ -1,4 +1,5 @@
-import { resultColumns } from "@/data/columns";import { role } from "@/lib/data";
+import { resultColumns } from "@/data/columns";
+import { role } from "@/lib/data";
 import FormModal from "@/components/FormModal";
 import { ResultListType } from "@/types";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -8,36 +9,33 @@ import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { dateFormat } from "@/lib/dataTimeFormat";
 import { auth } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
+import FormContainer from "@/components/FormContainer";
 
-const renderRow = async (item: ResultListType, index: number) => {
+const renderRow = async (item: ResultListType) => {
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
   return (
     <TableRow key={item.id}>
-      <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
-      <TableCell>{item.title || "-"}</TableCell>
+      <TableCell>{item.title}</TableCell>
       <TableCell>{item.studentName}</TableCell>
       <TableCell>{item.score}</TableCell>
+      <TableCell className="hidden md:table-cell">
+        {item?.className || "-"}
+      </TableCell>
       <TableCell className="hidden lg:table-cell">
-        {item.teacherName || "-"}
+        {item?.teacherName || "-"}
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        {item.className || "-"}
-      </TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {item.startTime ? dateFormat(item.startTime) : "-"}
+        {item?.startTime ? dateFormat(item.startTime) : "-"}
       </TableCell>
       <TableCell>
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="result" type="update" data={item.id} />
-              </Button>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="result" type="delete" id={item.id} />
-              </Button>
+                <FormContainer table="result" type="update" data={item.id} />
+                <FormContainer table="result" type="delete" id={item.id} />
             </>
           )}
         </div>
@@ -54,63 +52,90 @@ const ResultListPage = async ({
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
 
-  const { sessionClaims } = await auth();
+  const { userId, sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
+
+  const whereClause = {
+    AND: [
+      {
+        OR: [
+          // Teacher
+          {
+            student: {
+              class: {
+                teacher: { id: userId! },
+              },
+            },
+          },
+          // Student
+          {
+            student: { id: userId! },
+          },
+          // Parent
+          {
+            student: { parent: { id: userId! } },
+          },
+        ],
+      },
+      ...(queryParams.search
+        ? [
+            {
+              OR: [
+                {
+                  exam: {
+                    title: {
+                      contains: queryParams.search,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+                {
+                  assignment: {
+                    title: {
+                      contains: queryParams.search,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+                {
+                  student: {
+                    name: {
+                      contains: queryParams.search,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+              ],
+            },
+          ]
+        : []),
+    ],
+  };
 
   const [resultsResponse, count] = await prisma.$transaction([
     prisma.result.findMany({
-      where: {
-        ...(queryParams.search && {
-          OR: [
-            {
-              exam: {
-                title: { contains: queryParams.search, mode: "insensitive" },
-              },
-            },
-            {
-              assignment: {
-                title: { contains: queryParams.search, mode: "insensitive" },
-              },
-            },
-            {
-              student: {
-                name: { contains: queryParams.search, mode: "insensitive" },
-              },
-            },
-          ],
-        }),
-      },
+      where: whereClause,
       include: {
-        student: { select: { name: true } },
-        exam: {
-          select: {
-            title: true,
-            startTime: true,
-            lesson: {
-              select: {
-                class: {
-                  select: {
-                    name: true,
-                    teacher: true,
-                  },
-                },
+        student: {
+          include: {
+            class: {
+              include: {
+                teacher: true,
               },
             },
           },
         },
+        exam: {
+          include: {
+            subject: {
+              include: { class: true },
+            },
+          },
+        },
         assignment: {
-          select: {
-            title: true,
-            dueDate: true,
-            lesson: {
-              select: {
-                class: {
-                  select: {
-                    name: true,
-                    teacher: true,
-                  },
-                },
-              },
+          include: {
+            subject: {
+              include: { class: true },
             },
           },
         },
@@ -119,43 +144,22 @@ const ResultListPage = async ({
       skip: ITEM_PER_PAGE * (p - 1),
     }),
     prisma.result.count({
-      where: {
-        ...(queryParams.search && {
-          OR: [
-            {
-              exam: {
-                title: { contains: queryParams.search, mode: "insensitive" },
-              },
-            },
-            {
-              assignment: {
-                title: { contains: queryParams.search, mode: "insensitive" },
-              },
-            },
-            {
-              student: {
-                name: { contains: queryParams.search, mode: "insensitive" },
-              },
-            },
-          ],
-        }),
-      },
+      where: whereClause,
     }),
   ]);
 
   const results = resultsResponse.map((item) => {
-    const assessment = item.exam || item.assignment;
-    const isExam = assessment && "startTime" in assessment;
-
     return {
       id: item.id,
       score: item.score,
-
-      title: assessment?.title,
+      title: item.exam.title || item.assignment.title,
       studentName: item.student.name,
-      teacherName: assessment?.lesson.class.teacher?.name,
-      className: assessment?.lesson.class.name,
-      startTime: isExam ? assessment.startTime : assessment?.dueDate,
+      className:
+        item.exam.subject.class?.name ||
+        item.assignment.subject.class?.name ||
+        "",
+      teacherName: item.student.class?.teacher?.name || "",
+      startTime: item.exam.startTime || item.assignment?.dueDate,
     };
   });
 

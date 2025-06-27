@@ -1,11 +1,18 @@
 "use client";
 
-import { EventType } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon } from "lucide-react";
+import { dateFormat } from "@/lib/dataTimeFormat";
 
-const Event = ({ title, time, description, type }: EventType) => {
+type EventType = {
+  type: string;
+  title: string;
+  description?: string | "";
+  date: Date;
+};
+
+const Event = ({ type, title, description, date }: EventType) => {
   return (
     <Card className="border-0 shadow-none">
       <CardHeader className="px-0 pt-0 pb-2">
@@ -18,7 +25,7 @@ const Event = ({ title, time, description, type }: EventType) => {
             className="flex items-center gap-1 font-normal"
           >
             <CalendarIcon className="h-3 w-3" />
-            <span className="text-xs">{time}</span>
+            <span className="text-xs">{dateFormat(date)}</span>
           </Badge>
         </div>
       </CardHeader>

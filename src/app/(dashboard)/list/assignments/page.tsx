@@ -7,8 +7,9 @@ import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
 import { auth } from "@clerk/nextjs/server";
-import {  dateTimeFormat } from "@/lib/dataTimeFormat";
+import { dateTimeFormat } from "@/lib/dataTimeFormat";
 import { Prisma } from "@prisma/client";
+import FormContainer from "@/components/FormContainer";
 
 const renderRow = async (item: AssignmentListType, index: number) => {
   const { sessionClaims } = await auth();
@@ -32,12 +33,8 @@ const renderRow = async (item: AssignmentListType, index: number) => {
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="assignment" type="update" data={item} />
-              </Button>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="assignment" type="delete" id={item.id} />
-              </Button>
+              <FormContainer table="assignment" type="update" data={item} />
+              <FormContainer table="assignment" type="delete" id={item.id} />
             </>
           )}
         </div>

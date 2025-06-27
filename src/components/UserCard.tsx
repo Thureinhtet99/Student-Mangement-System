@@ -8,8 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 import { UserCardType } from "@/types";
+import prisma from "@/lib/prisma";
 
-const UserCard = ({ type, count, year }: UserCardType) => {
+const UserCard = async ({ type, year }: UserCardType) => {
+  const data = {
+    admin: prisma.admin,
+    teacher: prisma.teacher,
+    student: prisma.student,
+    parent: prisma.parent,
+  };
+
+  const userCount = await (data[type] as any).count();
+
   return (
     <Card className="flex-1 min-w-[130px] odd:bg-thirdColor even:bg-firstColor border-none">
       <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
@@ -25,10 +35,10 @@ const UserCard = ({ type, count, year }: UserCardType) => {
         </Button>
       </CardHeader>
       <CardContent className="p-4 pt-2">
-        <h1 className="text-2xl font-semibold">{count.toLocaleString()}</h1>
+        <h1 className="text-2xl font-semibold">{userCount.toLocaleString()}</h1>
       </CardContent>
       <CardFooter className="p-4 pt-0">
-        <p className="text-sm font-medium text-gray-500">{type}s</p>
+        <p className="text-sm font-medium text-gray-500 capitalize">{type}s</p>
       </CardFooter>
     </Card>
   );

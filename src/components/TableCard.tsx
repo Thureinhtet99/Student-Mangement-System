@@ -2,11 +2,10 @@ import React, { ReactNode } from "react";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import { role } from "@/lib/data";
-import FormModal from "@/components/FormModal";
 import { Filter, SortDesc } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import FormContainer from "./FormContainer";
 
 type TableCardProps<T> = {
   renderRow: (item: T, index: number) => ReactNode;
@@ -57,7 +56,11 @@ const TableCard = <T extends Record<string, any>>({
                 <Button variant="outline" size="icon" title="Sort">
                   <SortDesc className="h-4 w-4" />
                 </Button>
-                {role === "admin" && <FormModal table={table} type="create" />}
+                {role === "admin" && (
+                  <Button variant="ghost" size="icon">
+                    <FormContainer table={table} type="create" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>

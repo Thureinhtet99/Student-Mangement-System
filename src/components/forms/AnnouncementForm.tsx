@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { announcementFormSchema } from "@/data/formSchema";
+import { announcementFormSchema } from "@/lib/formSchema";
 import { Textarea } from "@/components/ui/textarea";
 
 // Schema type

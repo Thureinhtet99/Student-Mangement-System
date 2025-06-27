@@ -1,5 +1,4 @@
 export const teacherColumns = [
-  { header: "#", accessor: "index", className: "hidden md:table-cell" },
   { header: "Info", accessor: "info" },
   {
     header: "ID",
@@ -29,7 +28,6 @@ export const teacherColumns = [
 ];
 
 export const studentColumns = [
-  { header: "#", accessor: "index", className: "hidden md:table-cell" },
   { header: "Info", accessor: "info" },
   {
     header: "ID",
@@ -61,7 +59,7 @@ export const studentColumns = [
 export const parentColumns = [
   { header: "#", accessor: "index", className: "hidden md:table-cell" },
   { header: "Info", accessor: "info" },
-  { header: "ID", accessor: "id" },
+  { header: "ID", accessor: "id", className: "hidden md:table-cell" },
   {
     header: "Students",
     accessor: "students",
@@ -84,7 +82,6 @@ export const parentColumns = [
 ];
 
 export const subjectColumns = [
-  { header: "#", accessor: "index", className: "hidden md:table-cell" },
   {
     header: "Name",
     accessor: "name",
@@ -209,7 +206,7 @@ export const assignmentColumns = [
     accessor: "teacher",
     className: "hidden lg:table-cell",
   },
-  
+
   {
     header: "Actions",
     accessor: "action",
@@ -218,7 +215,6 @@ export const assignmentColumns = [
 ];
 
 export const resultColumns = [
-  { header: "#", accessor: "index", className: "hidden md:table-cell" },
   { header: "Title", accessor: "title" },
   {
     header: "Student",
@@ -229,19 +225,19 @@ export const resultColumns = [
     accessor: "score",
   },
   {
-    header: "Teacher",
-    accessor: "teacher",
-    className: "hidden lg:table-cell",
-  },
-  {
     header: "Class",
     accessor: "class",
     className: "hidden md:table-cell",
   },
   {
+    header: "Teacher",
+    accessor: "teacher",
+    className: "hidden lg:table-cell",
+  },
+  {
     header: "Date",
     accessor: "date",
-    className: "hidden lg:table-cell",
+    className: "hidden md:table-cell",
   },
   {
     header: "Actions",

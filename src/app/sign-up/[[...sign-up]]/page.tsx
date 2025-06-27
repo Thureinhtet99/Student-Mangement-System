@@ -41,7 +41,7 @@ export default function SignUpPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-y-4">
-                    <Clerk.Connection name="google" asChild>
+                    {/* <Clerk.Connection name="google" asChild>
                       <Button
                         size="sm"
                         variant="outline"
@@ -61,10 +61,10 @@ export default function SignUpPage() {
                           }
                         </Clerk.Loading>
                       </Button>
-                    </Clerk.Connection>
-                    <p className="flex items-center gap-x-3 text-sm text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
+                    </Clerk.Connection> */}
+                    {/* <p className="flex items-center gap-x-3 text-sm text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
                       or
-                    </p>
+                    </p> */}
                     <Clerk.Field name="username" className="space-y-2">
                       <Clerk.Label asChild>
                         <Label>Username</Label>

@@ -11,7 +11,6 @@ import { Calendar1, Mail, Phone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const SingleTeacherPage = () => {
@@ -384,7 +383,7 @@ const SingleTeacherPage = () => {
       {/* RIGHT */}
       <div className="w-full xl:w-1/3 flex flex-col gap-4">
         <Performance />
-        <Announcements />
+        {/* <Announcements /> */}
       </div>
     </div>
   );

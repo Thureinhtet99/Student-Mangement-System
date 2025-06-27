@@ -1,169 +1,194 @@
 "use client";
+
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import InputField from "../InputField";
-import { ArrowUpFromLine } from "lucide-react";
-
-const schema = z.object({
-  username: z.string().min(3, { message: "Username is required" }),
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters long" }),
-  firstName: z.string().min(1, { message: "First name is required" }),
-  lastName: z.string().min(1, { message: "Last name is required" }),
-  phone: z.string().min(1).optional(),
-  address: z.string().min(1).optional(),
-  birthday: z.date().optional(),
-  gender: z.enum(["male", "female"], { message: "Gender is required" }),
-  image: z.instanceof(File).optional(),
-});
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { LoaderCircle } from "lucide-react";
+import { createClass, updateClass } from "@/lib/actions";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { classFormSchema } from "@/lib/formSchema";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Schema type
-type Inputs = z.infer<typeof schema>;
+type Inputs = z.infer<typeof classFormSchema>;
 
 const ClassForm = ({
   type,
   data,
+  onClose,
+  relatedData,
 }: {
   type: "create" | "update";
   data?: any;
+  onClose?: () => void;
+  relatedData?: any;
 }) => {
-  // useForm
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Inputs>({
-    resolver: zodResolver(schema),
+  const teachers = relatedData?.teachers || [];
+
+  const form = useForm<Inputs>({
+    resolver: zodResolver(classFormSchema),
+    defaultValues: {
+      id: data?.id || null,
+      name: data?.name || "",
+      capacity: data?.capacity || 0,
+      teacherId: data?.teacherId || "",
+    },
   });
 
-  // onSubmit
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
+  // Mutation
+  const {
+    isPending,
+    isError,
+    error,
+    mutate,
+    reset: resetMutation,
+  } = useMutation({
+    mutationFn: async (values: Inputs) => {
+      if (type === "create") {
+        return await createClass(values);
+      } else {
+        return await updateClass(values);
+      }
+    },
+    onSuccess: () => {
+      toast.success(
+        `Class is ${type === "create" ? "created" : "updated"} successfully`
+      );
+      form.reset();
+      onClose?.();
+    },
   });
+
+  const onSubmit = (values: Inputs) => {
+    mutate(values);
+  };
 
   return (
-    <form className="flex flex-col gap-8" onSubmit={onSubmit}>
-      {type === "create" ? (
-        <h1 className="text-xl font-semibold">Create a new class</h1>
-      ) : (
-        <h1 className="text-xl font-semibold">Update class</h1>
-      )}
-      <span className="text-sm text-gray-400 font-medium">
-        Authentication Information
-      </span>
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="Username"
-          name="username"
-          htmlFor="username"
-          defaultValue={data?.username}
-          register={register}
-          error={errors?.username}
-        />
-        <InputField
-          label="Email"
-          name="email"
-          htmlFor="email"
-          type="email"
-          defaultValue={data?.email}
-          register={register}
-          error={errors?.email}
-        />
-        <InputField
-          label="Password"
-          name="password"
-          htmlFor="password"
-          type="password"
-          defaultValue={data?.password}
-          register={register}
-          error={errors?.password}
-        />
-      </div>
-      <span className="text-sm text-gray-400 font-medium">
-        Personal Information
-      </span>
+    <Card className="w-full py-4 border-0">
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Class Name */}
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Class Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter class name" {...field} />
+                  </FormControl>
+                  {isError && (
+                    <p className="text-xs font-medium text-destructive mt-1">
+                      {error?.message}
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="First name"
-          name="firstName"
-          htmlFor="firstName"
-          defaultValue={data?.firstName}
-          register={register}
-          error={errors?.firstName}
-        />
-        <InputField
-          label="Last name"
-          name="lastName"
-          htmlFor="lastName"
-          defaultValue={data?.lastName}
-          register={register}
-          error={errors?.lastName}
-        />
-        <InputField
-          label="Phone"
-          name="phone"
-          htmlFor="phone"
-          type="number"
-          defaultValue={data?.phone}
-          register={register}
-        />
-        <InputField
-          label="Address"
-          name="address"
-          htmlFor="address"
-          defaultValue={data?.address}
-          register={register}
-        />
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label htmlFor="gender">Gender</label>
-          <select
-            id="gender"
-            {...register("gender")}
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            defaultValue={data?.gender}
-          >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
-          {errors.gender?.message && (
-            <p className="text-red-400 text-xs">
-              {errors.gender.message.toString()}
-            </p>
-          )}
-        </div>
-        <InputField
-          label="Birthday"
-          name="birthday"
-          htmlFor="birthday"
-          type="date"
-          defaultValue={data?.birthday}
-          register={register}
-        />
-        <div className="flex flex-col gap-2 justify-center rounded-md p-2 w-full md:w-1/4">
-          <label
-            htmlFor="image"
-            className="text-sm text-gray-500 flex items-center gap-2 cursor-pointer"
-          >
-            <ArrowUpFromLine />
-            <span>Upload a photo</span>
-          </label>
-          <input
-            type="file"
-            id="image"
-            {...register("image")}
-            className="hidden"
-          />
-        </div>
-      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Capacity */}
+              <FormField
+                control={form.control}
+                name="capacity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Capacity</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="30" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-      <button className="bg-blue-500 text-white p-2 rounded-md" type="submit">
-        {type === "create" ? "Create" : "Update"}
-      </button>
-    </form>
+              {/* Teacher */}
+              <FormField
+                control={form.control}
+                name="teacherId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Teacher</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select teacher" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {teachers?.length === 0 ? (
+                          <SelectItem value="empty" disabled>
+                            No teachers found
+                          </SelectItem>
+                        ) : (
+                          teachers?.map((teacher: any) => (
+                            <SelectItem key={teacher.id} value={teacher.id}>
+                              {teacher.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Form actions */}
+            <div className="flex justify-end gap-x-2">
+              <Button
+                variant="destructive"
+                type="reset"
+                onClick={() => {
+                  form.reset();
+                  resetMutation();
+                }}
+                disabled={isPending}
+              >
+                Reset
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <LoaderCircle className="animate-spin h-4 w-4 mr-2" />
+                    {type === "create" ? "Creating..." : "Updating..."}
+                  </>
+                ) : type === "create" ? (
+                  "Create"
+                ) : (
+                  "Update"
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 

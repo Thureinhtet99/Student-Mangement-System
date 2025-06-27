@@ -1,415 +1,183 @@
-generator client {
-  provider = "prisma-client-js"
-}
+npm install firebase
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-model Admin {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  name      String
-  email     String   @unique
-  password  String
-  role      AdminRole @default(ADMIN)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyD7ZK2AHBtvt2UeApitxrz3YMIVHzY23kE",
+  authDomain: "personal-projects-a904f.firebaseapp.com",
+  projectId: "personal-projects-a904f",
+  storageBucket: "personal-projects-a904f.firebasestorage.app",
+  messagingSenderId: "886854965790",
+  appId: "1:886854965790:web:7e2fd986155ed5ed6fec0f",
+  measurementId: "G-Z5BD04WX8T"
+};
 
-  @@map("admins")
-}
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
-model Student {
-  id          String     @id @default(cuid())
-  username    String     @unique
-  name        String
-  email       String?    @unique
-  phone       String?    @unique
-  address     String?
-  gender      UserGender
-  birthday    DateTime?
-  image       String?
-  bloodType   String?
-  studentId   String?    @unique // Student ID number
-  enrollmentDate DateTime @default(now())
-  status      StudentStatus @default(ACTIVE)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
 
-  parentId    String?
-  parent      Parent?      @relation(fields: [parentId], references: [id])
-  classId     Int?
-  class       Class?       @relation(fields: [classId], references: [id])
-  gradeId     Int
-  grade       Grade        @relation(fields: [gradeId], references: [id])
-  
-  attendances Attendance[]
-  results     Result[]
-  fees        Fee[]
 
-  @@map("students")
-}
 
-model Teacher {
-  id          String     @id @default(cuid())
-  username    String     @unique
-  name        String
-  email       String     @unique
-  phone       String?    @unique
-  address     String?
-  gender      UserGender
-  birthday    DateTime?
-  image       String?
-  qualification String?
-  experience  Int? // years of experience
-  salary      Decimal?
-  hireDate    DateTime   @default(now())
-  status      TeacherStatus @default(ACTIVE)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+// ...existing code...
 
-  subjects    Subject[]
-  classes     Class[]
-  lessons     Lesson[]
-  schedules   Schedule[]
+const form = useForm<Inputs>({
+  resolver: zodResolver(parentFormSchema),
+  defaultValues: {
+    username: data?.username || "",
+    email: data?.email || "",
+    password: data?.password || "",
+    name: data?.name || "",
+    phone: data?.phone || "",
+    address: data?.address || "",
+    students: data?.students?.map((t: any) => t.id) || [],
+  },
+});
 
-  @@map("teachers")
-}
+// ...existing code...
 
-model Parent {
-  id          String   @id @default(cuid())
-  username    String   @unique
-  name        String
-  email       String?  @unique
-  phone       String?  @unique
-  address     String?
-  occupation  String?
-  relationship ParentRelation @default(FATHER)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+                  <div className="space-y-8">
+                    <FormField
+                      control={form.control}
+                      name="students"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel>Students</FormLabel>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-between"
+                                type="button"
+                              >
+                                <span>
+                                  {selectedStudents.length > 0
+                                    ? `${selectedStudents.length} student${
+                                        selectedStudents.length > 1 ? "s" : ""
+                                      } selected`
+                                    : "Select students"}
+                                </span>
+                                <Search className="h-4 w-4 ml-2 opacity-50" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                              <DialogHeader>
+                                <DialogTitle>Select Students</DialogTitle>
+                              </DialogHeader>
+                              <div className="py-4">
+                                <div className="relative mb-4">
+                                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    placeholder="Search students..."
+                                    value={studentSearchQuery}
+                                    onChange={(e) =>
+                                      setStudentSearchQuery(e.target.value)
+                                    }
+                                    className="pl-8"
+                                  />
+                                </div>
+                                <ScrollArea className="h-[300px] pr-4">
+                                  {filteredStudents.length === 0 ? (
+                                    <p className="text-center text-muted-foreground py-4">
+                                      No students found
+                                    </p>
+                                  ) : (
+                                    <div className="space-y-3">
+                                      {filteredStudents.map((student: any) => (
+                                        <div
+                                          key={student.id}
+                                          className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50"
+                                        >
+                                          <Checkbox
+                                            id={`student-${student.id}`}
+                                            checked={selectedStudents.includes(
+                                              student.id
+                                            )}
+                                            onCheckedChange={() => {
+                                              toggleStudentSelection(student.id);
+                                              field.onChange(
+                                                selectedStudents.includes(student.id)
+                                                  ? selectedStudents.filter(id => id !== student.id)
+                                                  : [...selectedStudents, student.id]
+                                              );
+                                            }}
+                                          />
+                                          <label
+                                            htmlFor={`student-${student.id}`}
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                                          >
+                                            {student.name}
+                                          </label>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </ScrollArea>
+                              </div>
+                              <DialogFooter>
+                                <DialogClose asChild>
+                                  <Button type="button">Done</Button>
+                                </DialogClose>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                          {selectedStudents.length > 0 && (
+                            <div className="flex flex-wrap gap-2 max-h-[100px] overflow-y-auto p-1">
+                              {selectedStudents.map((studentId) => {
+                                const student = students.find(
+                                  (s: any) => s.id === studentId
+                                );
+                                return (
+                                  <Badge
+                                    key={studentId}
+                                    variant="secondary"
+                                    className="flex items-center gap-1 py-1.5"
+                                  >
+                                    {student?.name}
+                                    <X
+                                      className="h-3 w-3 cursor-pointer ml-1"
+                                      onClick={() => {
+                                        removeStudent(studentId);
+                                        field.onChange(
+                                          selectedStudents.filter(id => id !== studentId)
+                                        );
+                                      }}
+                                    />
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          )}
+                          <FormMessage />
+                          <FormDescription>
+                            Select the students of this parent
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-  students Student[]
+// ...existing code...
 
-  @@map("parents")
-}
+  const toggleStudentSelection = (studentId: string) => {
+    const newSelection = selectedStudents.includes(studentId)
+      ? selectedStudents.filter((id) => id !== studentId)
+      : [...selectedStudents, studentId];
+    
+    setSelectedStudents(newSelection);
+    form.setValue("students", newSelection);
+  };
 
-model Class {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  capacity  Int      @default(30)
-  section   String?
-  room      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  const removeStudent = (studentId: string) => {
+    const newSelection = selectedStudents.filter((id) => id !== studentId);
+    setSelectedStudents(newSelection);
+    form.setValue("students", newSelection);
+  };
 
-  gradeId   Int
-  grade     Grade    @relation(fields: [gradeId], references: [id])
-  teacherId String?  // Class teacher
-  teacher   Teacher? @relation(fields: [teacherId], references: [id])
-  
-  lessons       Lesson[]
-  students      Student[]
-  events        Event[]
-  announcements Announcement[]
-  attendances   Attendance[]
-  schedules     Schedule[]
-
-  @@map("classes")
-}
-
-model Subject {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  code        String   @unique // Subject code like "MATH101"
-  description String?
-  credits     Int      @default(1)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  teachers  Teacher[]
-  lessons   Lesson[]
-  exams     Exam[]
-  schedules Schedule[]
-
-  @@map("subjects")
-}
-
-model Grade {
-  id        Int      @id @default(autoincrement())
-  level     Int      @unique // 1, 2, 3, etc.
-  name      String   @unique // "Grade 1", "Grade 2", etc.
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  students Student[]
-  classes  Class[]
-
-  @@map("grades")
-}
-
-model Lesson {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  date        DateTime
-  duration    Int      @default(60) // minutes
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  subjectId Int
-  subject   Subject @relation(fields: [subjectId], references: [id])
-  classId   Int
-  class     Class   @relation(fields: [classId], references: [id])
-  teacherId String
-  teacher   Teacher @relation(fields: [teacherId], references: [id])
-  
-  exams       Exam[]
-  assignments Assignment[]
-  attendances Attendance[]
-
-  @@map("lessons")
-}
-
-model Schedule {
-  id        Int      @id @default(autoincrement())
-  day       Day
-  startTime String   // "09:00"
-  endTime   String   // "10:00"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  subjectId Int
-  subject   Subject @relation(fields: [subjectId], references: [id])
-  classId   Int
-  class     Class   @relation(fields: [classId], references: [id])
-  teacherId String
-  teacher   Teacher @relation(fields: [teacherId], references: [id])
-
-  @@unique([day, startTime, classId])
-  @@unique([day, startTime, teacherId])
-  @@map("schedules")
-}
-
-model Exam {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  date        DateTime
-  startTime   String
-  endTime     String
-  totalMarks  Int      @default(100)
-  passingMarks Int     @default(40)
-  type        ExamType @default(REGULAR)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  lessonId  Int?
-  lesson    Lesson?  @relation(fields: [lessonId], references: [id])
-  subjectId Int
-  subject   Subject  @relation(fields: [subjectId], references: [id])
-  
-  results Result[]
-
-  @@map("exams")
-}
-
-model Assignment {
-  id          Int       @id @default(autoincrement())
-  title       String
-  description String?
-  dueDate     DateTime
-  totalMarks  Int       @default(100)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  lessonId Int
-  lesson   Lesson @relation(fields: [lessonId], references: [id])
-  
-  results Result[]
-
-  @@map("assignments")
-}
-
-model Result {
-  id           Int      @id @default(autoincrement())
-  score        Decimal
-  obtainedMarks Int
-  totalMarks   Int
-  percentage   Decimal?
-  grade        String?  // A, B, C, D, F
-  comments     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  examId       Int?
-  exam         Exam?       @relation(fields: [examId], references: [id])
-  assignmentId Int?
-  assignment   Assignment? @relation(fields: [assignmentId], references: [id])
-  studentId    String
-  student      Student     @relation(fields: [studentId], references: [id])
-
-  @@unique([studentId, examId])
-  @@unique([studentId, assignmentId])
-  @@map("results")
-}
-
-model Attendance {
-  id        Int            @id @default(autoincrement())
-  date      DateTime
-  status    AttendanceStatus @default(PRESENT)
-  remarks   String?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-
-  studentId String
-  student   Student @relation(fields: [studentId], references: [id])
-  classId   Int?
-  class     Class?  @relation(fields: [classId], references: [id])
-  lessonId  Int?
-  lesson    Lesson? @relation(fields: [lessonId], references: [id])
-
-  @@unique([studentId, date, lessonId])
-  @@map("attendances")
-}
-
-model Fee {
-  id          Int       @id @default(autoincrement())
-  amount      Decimal
-  type        FeeType
-  dueDate     DateTime
-  paidDate    DateTime?
-  status      FeeStatus @default(PENDING)
-  description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  studentId String
-  student   Student @relation(fields: [studentId], references: [id])
-
-  @@map("fees")
-}
-
-model Event {
-  id          Int       @id @default(autoincrement())
-  title       String
-  description String?
-  startTime   DateTime
-  endTime     DateTime?
-  location    String?
-  type        EventType @default(GENERAL)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  classId Int?
-  class   Class? @relation(fields: [classId], references: [id])
-
-  @@map("events")
-}
-
-model Announcement {
-  id          Int       @id @default(autoincrement())
-  title       String
-  description String?
-  date        DateTime  @default(now())
-  priority    Priority  @default(MEDIUM)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  classId Int?
-  class   Class? @relation(fields: [classId], references: [id])
-
-  @@map("announcements")
-}
-
-// Enums
-enum UserGender {
-  MALE
-  FEMALE
-  OTHER
-}
-
-enum Day {
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-  SUNDAY
-}
-
-enum AdminRole {
-  SUPER_ADMIN
-  ADMIN
-  STAFF
-}
-
-enum StudentStatus {
-  ACTIVE
-  INACTIVE
-  GRADUATED
-  TRANSFERRED
-  SUSPENDED
-}
-
-enum TeacherStatus {
-  ACTIVE
-  INACTIVE
-  ON_LEAVE
-  TERMINATED
-}
-
-enum ParentRelation {
-  FATHER
-  MOTHER
-  GUARDIAN
-  OTHER
-}
-
-enum ExamType {
-  REGULAR
-  MIDTERM
-  FINAL
-  QUIZ
-  ASSIGNMENT
-}
-
-enum AttendanceStatus {
-  PRESENT
-  ABSENT
-  LATE
-  EXCUSED
-}
-
-enum FeeType {
-  TUITION
-  LIBRARY
-  LABORATORY
-  SPORTS
-  TRANSPORT
-  OTHER
-}
-
-enum FeeStatus {
-  PENDING
-  PAID
-  OVERDUE
-  PARTIAL
-}
-
-enum EventType {
-  GENERAL
-  ACADEMIC
-  SPORTS
-  CULTURAL
-  MEETING
-  HOLIDAY
-}
-
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
+// ...existing code...

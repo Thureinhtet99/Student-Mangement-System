@@ -7,7 +7,7 @@ CREATE TYPE "Day" AS ENUM ('MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY
 -- CreateTable
 CREATE TABLE "Admin" (
     "id" TEXT NOT NULL,
-    "username" TEXT NOT NULL,
+    "username" TEXT,
 
     CONSTRAINT "Admin_pkey" PRIMARY KEY ("id")
 );
@@ -15,7 +15,7 @@ CREATE TABLE "Admin" (
 -- CreateTable
 CREATE TABLE "Student" (
     "id" TEXT NOT NULL,
-    "username" TEXT NOT NULL,
+    "username" TEXT,
     "name" TEXT NOT NULL,
     "email" TEXT,
     "phone" TEXT,
@@ -35,7 +35,7 @@ CREATE TABLE "Student" (
 -- CreateTable
 CREATE TABLE "Teacher" (
     "id" TEXT NOT NULL,
-    "username" TEXT NOT NULL,
+    "username" TEXT,
     "name" TEXT NOT NULL,
     "email" TEXT,
     "phone" TEXT,
@@ -52,7 +52,7 @@ CREATE TABLE "Teacher" (
 -- CreateTable
 CREATE TABLE "Parent" (
     "id" TEXT NOT NULL,
-    "username" TEXT NOT NULL,
+    "username" TEXT,
     "name" TEXT NOT NULL,
     "email" TEXT,
     "phone" TEXT,
@@ -141,9 +141,9 @@ CREATE TABLE "Result" (
     "comment" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "examId" INTEGER NOT NULL,
-    "assignmentId" INTEGER NOT NULL,
-    "studentId" TEXT,
+    "examId" INTEGER,
+    "assignmentId" INTEGER,
+    "studentId" TEXT NOT NULL,
 
     CONSTRAINT "Result_pkey" PRIMARY KEY ("id")
 );
@@ -186,6 +186,20 @@ CREATE TABLE "Announcement" (
     "classId" INTEGER,
 
     CONSTRAINT "Announcement_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Message" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT,
+    "content" TEXT,
+    "read" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "senderId" TEXT NOT NULL,
+    "receiverId" TEXT NOT NULL,
+
+    CONSTRAINT "Message_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -263,13 +277,13 @@ ALTER TABLE "Exam" ADD CONSTRAINT "Exam_subjectId_fkey" FOREIGN KEY ("subjectId"
 ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Result" ADD CONSTRAINT "Result_examId_fkey" FOREIGN KEY ("examId") REFERENCES "Exam"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Result" ADD CONSTRAINT "Result_examId_fkey" FOREIGN KEY ("examId") REFERENCES "Exam"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Result" ADD CONSTRAINT "Result_assignmentId_fkey" FOREIGN KEY ("assignmentId") REFERENCES "Assignment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Result" ADD CONSTRAINT "Result_assignmentId_fkey" FOREIGN KEY ("assignmentId") REFERENCES "Assignment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Result" ADD CONSTRAINT "Result_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Result" ADD CONSTRAINT "Result_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

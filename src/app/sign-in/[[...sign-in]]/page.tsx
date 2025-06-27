@@ -17,7 +17,6 @@ import { Icons } from "@/components/ui/icons";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 export default function SignInPage() {
@@ -29,7 +28,6 @@ export default function SignInPage() {
     queryFn: async () => {
       if (isLoaded && isSignedIn) {
         const role = user?.publicMetadata.role;
-        console.log(role);
         if (role) router.push(`/${role}`);
       }
       return null;

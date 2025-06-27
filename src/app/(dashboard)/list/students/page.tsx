@@ -11,14 +11,15 @@ import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { dateFormat } from "@/lib/dataTimeFormat";
 import { auth } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
+import FormContainer from "@/components/FormContainer";
 
-const renderRow = async (item: StudentListType, index: number) => {
+const renderRow = async (item: StudentListType) => {
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
   return (
     <TableRow key={item.id}>
-      <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
       <TableCell className="py-0">
         <div className="flex items-center gap-x-3">
           <Avatar>
@@ -27,7 +28,7 @@ const renderRow = async (item: StudentListType, index: number) => {
               alt={item.name}
               className="object-cover"
             />
-            <AvatarFallback>{item.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="capitalize">{item.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
             <p>{item.name}</p>
@@ -37,7 +38,11 @@ const renderRow = async (item: StudentListType, index: number) => {
           </div>
         </div>
       </TableCell>
-      <TableCell>{item.id}</TableCell>
+      <TableCell>
+        {item.id.length > 8
+          ? `${item.id.substring(0, 8)}${"*".repeat(5)}`
+          : item.id}
+      </TableCell>
       <TableCell className="hidden md:table-cell">
         {item.class?.name || "-"}
       </TableCell>
@@ -59,9 +64,10 @@ const renderRow = async (item: StudentListType, index: number) => {
             </Link>
           </Button>
           {role === "admin" && (
-            <Button variant="ghost" size="icon" asChild>
-              <FormModal table="student" type="delete" id={item.id} />
-            </Button>
+            <>
+              <FormContainer table="student" type="update" data={item} />
+              <FormContainer table="student" type="delete" id={item.id} />
+            </>
           )}
         </div>
       </TableCell>
@@ -77,55 +83,71 @@ const StudentListPage = async ({
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
 
-  const { sessionClaims } = await auth();
+  const { userId, sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
+
+  // Create a base condition for search filters
+  const searchCondition = queryParams.search
+    ? {
+        OR: [
+          {
+            name: {
+              contains: queryParams.search,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
+          {
+            id: {
+              contains: queryParams.search,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
+          {
+            class: {
+              name: {
+                contains: queryParams.search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          },
+          ...(isNaN(parseInt(queryParams.search))
+            ? []
+            : [
+                {
+                  grade: {
+                    level: { equals: parseInt(queryParams.search) },
+                  },
+                },
+              ]),
+        ],
+      }
+    : {};
+
+  const whereClause =
+    role === "admin"
+      ? searchCondition
+      : {
+          AND: [
+            {
+              class: {
+                teacherId: userId, // Teacher can only see their students
+              },
+            },
+            searchCondition, // Apply search filter if provided
+          ].filter((condition) => Object.keys(condition).length > 0), // Remove empty conditions
+        };
 
   const [students, count] = await prisma.$transaction([
     prisma.student.findMany({
-      where: {
-        ...(queryParams.search && {
-          OR: [
-            { name: { contains: queryParams.search, mode: "insensitive" } },
-            { id: { contains: queryParams.search, mode: "insensitive" } },
-            {
-              class: {
-                name: { contains: queryParams.search, mode: "insensitive" },
-              },
-            },
-            ...(isNaN(parseInt(queryParams.search)) ? [] : [{
-              grade: {
-                level: { equals: parseInt(queryParams.search) },
-              },
-            }]),
-          ],
-        }),
-      },
+      where: whereClause,
       include: { class: true, grade: true },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
     prisma.student.count({
-      where: {
-        ...(queryParams.search && {
-          OR: [
-            { name: { contains: queryParams.search, mode: "insensitive" } },
-            { id: { contains: queryParams.search, mode: "insensitive" } },
-            {
-              class: {
-                name: { contains: queryParams.search, mode: "insensitive" },
-              },
-            },
-            ...(isNaN(parseInt(queryParams.search)) ? [] : [{
-              grade: {
-                level: { equals: parseInt(queryParams.search) },
-              },
-            }]),
-          ],
-        }),
-      },
+      where: whereClause,
     }),
   ]);
-
 
   return (
     <>

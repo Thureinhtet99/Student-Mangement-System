@@ -1,4 +1,4 @@
-import FormModal from "@/components/FormModal";
+import FormContainer from "@/components/FormContainer";
 import { TeacherListType } from "@/types";
 import { Eye } from "lucide-react";
 import Link from "next/link";
@@ -12,14 +12,14 @@ import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import React from "react";
 import { auth } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
 
-const renderRow = async (item: TeacherListType, index: number) => {
+const renderRow = async (item: TeacherListType) => {
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
   return (
     <TableRow key={item.id}>
-      <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
       <TableCell className="py-0">
         <div className="flex items-center gap-x-3">
           <Avatar>
@@ -28,7 +28,7 @@ const renderRow = async (item: TeacherListType, index: number) => {
               alt={item.name}
               className="object-cover"
             />
-            <AvatarFallback>{item.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="capitalize">{item.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
             <p>{item.name}</p>
@@ -38,7 +38,13 @@ const renderRow = async (item: TeacherListType, index: number) => {
           </div>
         </div>
       </TableCell>
-      <TableCell>{item.id}</TableCell>
+      <TableCell>
+        <TableCell>
+          {item.id.length > 8
+            ? `${item.id.substring(0, 8)}${"*".repeat(5)}`
+            : item.id}
+        </TableCell>
+      </TableCell>
       <TableCell className="hidden md:table-cell">
         {item.subjects.length > 3 ? (
           <>
@@ -46,7 +52,7 @@ const renderRow = async (item: TeacherListType, index: number) => {
               <React.Fragment key={subject.id}>
                 <Badge
                   variant="secondary"
-                  className="ml-1 mb-1 hover:bg-slate-200 cursor-pointer"
+                  className="ml-1 mb-1 capitalize hover:bg-slate-200 cursor-pointer"
                 >
                   {subject.name}
                 </Badge>
@@ -54,7 +60,7 @@ const renderRow = async (item: TeacherListType, index: number) => {
             ))}
             <Badge
               variant="secondary"
-              className="ml-1 mb-1 hover:bg-slate-200 cursor-pointer"
+              className="ml-1 mb-1 capitalize hover:bg-slate-200 cursor-pointer"
             >
               +{item.subjects.length - 3} more
             </Badge>
@@ -65,7 +71,7 @@ const renderRow = async (item: TeacherListType, index: number) => {
               <React.Fragment key={subject.id}>
                 <Badge
                   variant="secondary"
-                  className="hover:bg-slate-200 cursor-pointer"
+                  className="hover:bg-slate-200 cursor-pointer ml-1 mb-1 capitalize"
                 >
                   {subject.name}
                 </Badge>
@@ -77,7 +83,11 @@ const renderRow = async (item: TeacherListType, index: number) => {
       <TableCell className="hidden md:table-cell">
         {item.classes.length > 0 ? (
           item.classes.map((cls) => (
-            <Badge key={cls.id} variant="secondary" className="mr-1">
+            <Badge
+              key={cls.id}
+              variant="secondary"
+              className="ml-1 mb-1 capitalize"
+            >
               {cls.name}
             </Badge>
           ))
@@ -96,9 +106,10 @@ const renderRow = async (item: TeacherListType, index: number) => {
             </Link>
           </Button>
           {role === "admin" && (
-            <Button variant="ghost" size="icon" asChild>
-              <FormModal table="teacher" type="delete" id={item.id} />
-            </Button>
+            <>
+              <FormContainer table="teacher" type="update" data={item} />
+              <FormContainer table="teacher" type="delete" id={item.id} />
+            </>
           )}
         </div>
       </TableCell>
@@ -117,60 +128,56 @@ const TeacherListPage = async ({
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
+  const whereClause = {
+    ...(queryParams.search && {
+      OR: [
+        {
+          name: {
+            contains: queryParams.search,
+            mode: Prisma.QueryMode.insensitive,
+          },
+        },
+        {
+          id: {
+            contains: queryParams.search,
+            mode: Prisma.QueryMode.insensitive,
+          },
+        },
+        {
+          subjects: {
+            some: {
+              name: {
+                contains: queryParams.search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          },
+        },
+        {
+          classes: {
+            some: {
+              name: {
+                contains: queryParams.search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          },
+        },
+      ],
+    }),
+  };
+
   const [teachers, count] = await prisma.$transaction([
     prisma.teacher.findMany({
-      where: {
-        ...(queryParams.search && {
-          OR: [
-            { name: { contains: queryParams.search, mode: "insensitive" } },
-            { id: { contains: queryParams.search, mode: "insensitive" } },
-            {
-              subjects: {
-                some: {
-                  name: { contains: queryParams.search, mode: "insensitive" },
-                },
-              },
-            },
-            {
-              classes: {
-                some: {
-                  name: { contains: queryParams.search, mode: "insensitive" },
-                },
-              },
-            },
-          ],
-        }),
-      },
+      where: whereClause,
       include: { subjects: true, classes: true },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
     prisma.teacher.count({
-      where: {
-        ...(queryParams.search && {
-          OR: [
-            { name: { contains: queryParams.search, mode: "insensitive" } },
-            { id: { contains: queryParams.search, mode: "insensitive" } },
-            {
-              subjects: {
-                some: {
-                  name: { contains: queryParams.search, mode: "insensitive" },
-                },
-              },
-            },
-            {
-              classes: {
-                some: {
-                  name: { contains: queryParams.search, mode: "insensitive" },
-                },
-              },
-            },
-          ],
-        }),
-      },
+      where: whereClause,
     }),
   ]);
-
 
   return (
     <>

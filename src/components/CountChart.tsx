@@ -1,33 +1,28 @@
 "use client";
 
 import Image from "next/image";
-import {
-  RadialBarChart,
-  RadialBar,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { RadialBarChart, RadialBar, ResponsiveContainer } from "recharts";
 import CustomTitle from "./CustomTitle";
 
-const data = [
-  {
-    name: "Total",
-    count: 100,
-    fill: "white",
-  },
-  {
-    name: "Boys",
-    count: 53,
-    fill: "#caf0f8",
-  },
-  {
-    name: "Girls",
-    count: 47,
-    fill: "#90e0ef",
-  },
-];
+const CountChart = ({ boys, girls }: { boys: number; girls: number }) => {
+  const data = [
+    {
+      name: "Total",
+      count: boys + girls,
+      fill: "white",
+    },
+    {
+      name: "Boys",
+      count: boys,
+      fill: "#caf0f8",
+    },
+    {
+      name: "Girls",
+      count: girls,
+      fill: "#90e0ef",
+    },
+  ];
 
-const CountChart = () => {
   return (
     <div className="bg-white rounded-lg w-full h-full p-4">
       {/* TITLE */}
@@ -61,12 +56,16 @@ const CountChart = () => {
         <div className="flex flex-col gap-1">
           <div className="w-5 h-5 rounded-full bg-fourthColor" />
           <h1 className="font-bold">1,234</h1>
-          <h2 className="text-xs text-gray-300">Boys (55%)</h2>
+          <h2 className="text-xs text-gray-300">
+            Boys ({Math.round((boys / (boys + girls)) * 100)}%)
+          </h2>
         </div>
         <div className="flex flex-col gap-1">
           <div className="w-5 h-5 rounded-full bg-secondColor" />
           <h1 className="font-bold">1,234</h1>
-          <h2 className="text-xs text-gray-300">Girls (45%)</h2>
+          <h2 className="text-xs text-gray-300">
+            Girls ({Math.round((girls / (boys + girls)) * 100)}%)
+          </h2>
         </div>
       </div>
     </div>

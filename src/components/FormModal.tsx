@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { LoaderCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import {
@@ -10,8 +11,32 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  deleteClass,
+  deleteParent,
+  deleteStudent,
+  deleteSubject,
+  deleteTeacher,
+} from "@/lib/actions";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { FormContainerType } from "@/types";
 
-// Loader
+const deleteActionMap = {
+  teacher: deleteTeacher,
+  student: deleteStudent,
+  parent: deleteParent,
+  subject: deleteSubject,
+  class: deleteClass,
+  lesson: deleteSubject,
+  exam: deleteSubject,
+  assignment: deleteSubject,
+  announcement: deleteSubject,
+  result: deleteSubject,
+  event: deleteSubject,
+};
+
+// Lazy loading
 const TeacherForm = dynamic(() => import("./forms/TeacherForm"), {
   loading: () => (
     <div className="flex justify-center items-center p-4">
@@ -99,16 +124,56 @@ const EventForm = dynamic(() => import("./forms/EventForm"), {
 
 // Forms
 const forms: {
-  [table: string]: (type: "create" | "update", data?: any) => JSX.Element;
+  [table: string]: (
+    type: "create" | "update",
+    data?: any,
+    onClose?: () => void,
+    relatedData?: any
+  ) => JSX.Element;
 } = {
-  teacher: (type, data) => <TeacherForm type={type} data={data} />,
-  student: (type, data) => <StudentForm type={type} data={data} />,
-  parent: (type, data) => <ParentForm type={type} data={data} />,
-  subject: (type, data) => <SubjectForm type={type} data={data} />,
+  teacher: (type, data, onClose, relatedData) => (
+    <TeacherForm
+      type={type}
+      data={data}
+      onClose={onClose}
+      relatedData={relatedData}
+    />
+  ),
+  student: (type, data, onClose, relatedData) => (
+    <StudentForm
+      type={type}
+      data={data}
+      onClose={onClose}
+      relatedData={relatedData}
+    />
+  ),
+  parent: (type, data, onClose, relatedData) => (
+    <ParentForm
+      type={type}
+      data={data}
+      onClose={onClose}
+      relatedData={relatedData}
+    />
+  ),
+  subject: (type, data, onClose, relatedData) => (
+    <SubjectForm
+      type={type}
+      data={data}
+      onClose={onClose}
+      relatedData={relatedData}
+    />
+  ),
   announcement: (type, data) => <AnnouncementForm type={type} data={data} />,
   assignment: (type, data) => <AssignmentForm type={type} data={data} />,
   attendance: (type, data) => <AttendanceForm type={type} data={data} />,
-  class: (type, data) => <ClassForm type={type} data={data} />,
+  class: (type, data, onClose, relatedData) => (
+    <ClassForm
+      type={type}
+      data={data}
+      onClose={onClose}
+      relatedData={relatedData}
+    />
+  ),
   event: (type, data) => <EventForm type={type} data={data} />,
   exam: (type, data) => <ExamForm type={type} data={data} />,
   lesson: (type, data) => <LessonForm type={type} data={data} />,
@@ -120,23 +185,62 @@ const FormContent = ({
   type,
   data,
   id,
+  onClose,
+  relatedData,
 }: {
   table: string;
   type: "create" | "update" | "delete";
   data?: any;
   id?: number | string;
+  onClose?: () => void;
+  relatedData?: any;
 }) => {
+  // Mutation
+  const { isPending, mutate } = useMutation({
+    mutationFn: (variables: { id: number | string }) => {
+      const deleteAction =
+        deleteActionMap[table as keyof typeof deleteActionMap];
+      return deleteAction(variables as any);
+    },
+    onSuccess: () => {
+      toast.success(
+        `${
+          table.charAt(0).toUpperCase() + table.slice(1)
+        } is deleted successfully`
+      );
+      onClose?.();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const onSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (id) mutate({ id });
+  };
+
   return type === "delete" && id ? (
-    <form action="" className="flex flex-col gap-4 p-4">
+    <form onSubmit={onSubmit} className="flex flex-col gap-4 p-4">
       <span className="text-center font-medium">
         Are you sure you want to delete this {table}?
       </span>
-      <Button variant="destructive" type="submit" className="self-center">
-        Delete
+      <Button
+        variant="destructive"
+        type="submit"
+        className="self-center"
+        disabled={isPending}
+      >
+        {isPending ? (
+          <>
+            <LoaderCircle className="animate-spin h-4 w-4" />
+            Deleting...
+          </>
+        ) : (
+          "Delete"
+        )}
       </Button>
     </form>
   ) : type === "create" || type === "update" ? (
-    forms[table](type, data)
+    forms[table](type, data, onClose, relatedData)
   ) : (
     "Form not found"
   );
@@ -147,24 +251,10 @@ const FormModal = ({
   type,
   data,
   id,
-}: {
-  table:
-    | "teacher"
-    | "student"
-    | "parent"
-    | "subject"
-    | "class"
-    | "lesson"
-    | "exam"
-    | "assignment"
-    | "result"
-    | "attendance"
-    | "event"
-    | "announcement";
-  type: "create" | "update" | "delete";
-  data?: any;
-  id?: number | string;
-}) => {
+  relatedData,
+}: FormContainerType) => {
+  const [open, setOpen] = useState(false);
+
   const size = type === "create" ? "w-9 h-9" : "w-7 h-7";
   const icon =
     type === "create" ? (
@@ -175,8 +265,10 @@ const FormModal = ({
       <Trash2 size={16} />
     );
 
+  const handleClose = () => setOpen(false);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"
@@ -193,7 +285,14 @@ const FormModal = ({
               : type === "update" && `Update ${table}`}
           </DialogTitle>
         </DialogHeader>
-        <FormContent table={table} type={type} data={data} id={id} />
+        <FormContent
+          table={table}
+          type={type}
+          data={data}
+          id={id}
+          onClose={handleClose}
+          relatedData={relatedData}
+        />
       </DialogContent>
     </Dialog>
   );

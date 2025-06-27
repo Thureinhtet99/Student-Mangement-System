@@ -11,6 +11,7 @@ import { ITEM_PER_PAGE } from "@/lib/settings";
 import { dateTimeFormat } from "@/lib/dataTimeFormat";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
+import FormContainer from "@/components/FormContainer";
 
 const renderRow = async (item: EventListType, index: number) => {
   const { sessionClaims } = await auth();
@@ -32,12 +33,8 @@ const renderRow = async (item: EventListType, index: number) => {
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="event" type="update" data={item} />
-              </Button>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="event" type="delete" id={item.id} />
-              </Button>
+              <FormContainer table="event" type="update" data={item} />
+              <FormContainer table="event" type="delete" id={item.id} />
             </>
           )}
         </div>

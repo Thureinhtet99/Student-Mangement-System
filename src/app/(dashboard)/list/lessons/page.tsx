@@ -7,6 +7,8 @@ import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
 import { auth } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
+import FormContainer from "@/components/FormContainer";
 
 const renderRow = async (item: LessonListType) => {
   const { sessionClaims } = await auth();
@@ -17,20 +19,18 @@ const renderRow = async (item: LessonListType) => {
       <TableCell className="hidden md:table-cell">{item.id}</TableCell>
       <TableCell>{item.name}</TableCell>
       <TableCell>{item.subject.name}</TableCell>
-      <TableCell className="hidden md:table-cell">{item.class.name}</TableCell>
+      <TableCell className="hidden md:table-cell">
+        {/* {item.class.name} */}-
+      </TableCell>
       <TableCell className="hidden lg:table-cell">
-        {item.class.teacher?.name}
+        {/* {item.class.teacher?.name} */}-
       </TableCell>
       <TableCell>
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="lesson" type="update" data={item} />
-              </Button>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="lesson" type="delete" id={item.id} />
-              </Button>
+              <FormContainer table="lesson" type="update" data={item} />
+              <FormContainer table="lesson" type="delete" id={item.id} />
             </>
           )}
         </div>
@@ -50,42 +50,78 @@ const LessonListPage = async ({
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
+  // const whereClause = {
+  //   AND: [
+  //     {
+  //       OR: [
+  //         // Teacher
+  //         {
+  //           subject: {
+  //             class: {
+  //               teacher: { id: userId! },
+  //             },
+  //           },
+  //         },
+  //         // Student
+  //         {
+  //           subject: {
+  //             class: {
+  //               students: {
+  //                 some: {
+  //                   id: userId!,
+  //                 },
+  //               },
+  //             },
+  //           },
+  //         },
+  //         // Parent
+  //         {
+  //           subject: {
+  //             class: {
+  //               students: {
+  //                 some: {
+  //                   parent: { id: userId! },
+  //                 },
+  //               },
+  //             },
+  //           },
+  //         },
+  //       ],
+  //     },
+  //     ...(queryParams.search
+  //       ? [
+  //           {
+  //             OR: [
+  //               {
+  //                 name: {
+  //                   contains: queryParams.search,
+  //                   mode: Prisma.QueryMode.insensitive,
+  //                 },
+  //               },
+  //               {
+  //                 subject: {
+  //                   name: {
+  //                     contains: queryParams.search,
+  //                     mode: Prisma.QueryMode.insensitive,
+  //                   },
+  //                 },
+  //               },
+  //             ],
+  //           },
+  //         ]
+  //       : []),
+  //   ],
+  // };
+
   const [lessons, count] = await prisma.$transaction([
     prisma.lesson.findMany({
-      where: {
-        ...(queryParams.search && {
-          OR: [
-            { name: { contains: queryParams.search, mode: "insensitive" } },
-            {
-              subject: {
-                name: { contains: queryParams.search, mode: "insensitive" },
-              },
-            },
-          ],
-        }),
-      },
-      include: {
-        subject: true,
-        class: {
-          include: { teacher: true },
-        },
-      },
+      // where: whereClause,
+      include: { subject: true },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
     prisma.lesson.count({
-      where: {
-        ...(queryParams.search && {
-          OR: [
-            { name: { contains: queryParams.search, mode: "insensitive" } },
-            {
-              subject: {
-                name: { contains: queryParams.search, mode: "insensitive" },
-              },
-            },
-          ],
-        }),
-      },
+      // where: whereClause,
     }),
   ]);
 

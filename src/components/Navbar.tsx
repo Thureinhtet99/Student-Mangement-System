@@ -9,7 +9,7 @@ const Navbar = async () => {
   const role = user?.publicMetadata.role as string;
 
   return (
-    <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow">
       <div className="container flex items-center justify-between h-16 px-4 max-w-screen-2xl mx-auto">
         {/* LOGO/BRAND */}
         <div className="flex items-center">

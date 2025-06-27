@@ -44,12 +44,12 @@ const EventCalendar = () => {
             key={event.id}
             className="p-4 rounded-md border border-gray-100 border-t-4 odd:border-t-firstColor even:border-t-thirdColor"
           >
-            <Event
+            {/* <Event
               title={event.title}
-              time={event.time}
               description={event.description}
+              date={event.time}
               type="event"
-            />
+            /> */}
           </div>
         ))}
       </div>

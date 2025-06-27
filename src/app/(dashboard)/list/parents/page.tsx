@@ -2,13 +2,14 @@ import { parentColumns } from "@/data/columns";
 import FormModal from "@/components/FormModal";
 import { ParentListType } from "@/types";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import TableCard from "@/components/TableCard";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { auth } from "@clerk/nextjs/server";
 import React from "react";
 import Link from "next/link";
+import { Prisma } from "@prisma/client";
+import FormContainer from "@/components/FormContainer";
 
 const renderRow = async (item: ParentListType, index: number) => {
   const { sessionClaims } = await auth();
@@ -23,7 +24,11 @@ const renderRow = async (item: ParentListType, index: number) => {
           {item?.email || "-"}
         </p>
       </TableCell>
-      <TableCell>{item.id}</TableCell>
+      <TableCell className="hidden md:table-cell">
+        {item.id.length > 8
+          ? `${item.id.substring(0, 8)}${"*".repeat(5)}`
+          : item.id}
+      </TableCell>
       <TableCell className="text-xs">
         {item.students.length > 0 ? (
           item.students.map((student, index) => (
@@ -39,7 +44,7 @@ const renderRow = async (item: ParentListType, index: number) => {
           ))
         ) : (
           <span className="text-gray-500">No students assigned</span>
-        )}{" "}
+        )}
       </TableCell>
       <TableCell className="hidden md:table-cell">
         {item?.phone || "-"}
@@ -51,12 +56,8 @@ const renderRow = async (item: ParentListType, index: number) => {
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="parent" type="update" data={item} />
-              </Button>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="parent" type="delete" id={item.id} />
-              </Button>
+              <FormContainer table="parent" type="update" data={item} />
+              <FormContainer table="parent" type="delete" id={item.id} />
             </>
           )}
         </div>
@@ -73,46 +74,59 @@ const ParentListPage = async ({
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
 
-  const { sessionClaims } = await auth();
+  const { userId, sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  const [parents, count] = await prisma.$transaction([
-    prisma.parent.findMany({
-      where: {
-        ...(queryParams.search && {
-          OR: [
-            { name: { contains: queryParams.search, mode: "insensitive" } },
-            { id: { contains: queryParams.search, mode: "insensitive" } },
-            {
-              students: {
-                some: {
-                  name: { contains: queryParams.search, mode: "insensitive" },
+  const searchCondition = queryParams.search
+    ? {
+        OR: [
+          {
+            name: {
+              contains: queryParams.search,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
+          {
+            students: {
+              some: {
+                name: {
+                  contains: queryParams.search,
+                  mode: Prisma.QueryMode.insensitive,
                 },
               },
             },
-          ],
-        }),
-      },
+          },
+        ],
+      }
+    : {};
+
+  const whereClause =
+    role === "admin"
+      ? searchCondition
+      : {
+          AND: [
+            {
+              OR: [
+                // Teacher
+                {
+                  students: {
+                    some: { parentId: userId },
+                  },
+                },
+              ],
+            },
+          ].filter((condition) => Object.keys(condition).length > 0), // Remove empty conditions
+        };
+
+  const [parents, count] = await prisma.$transaction([
+    prisma.parent.findMany({
+      where: whereClause,
       include: { students: true },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
     prisma.parent.count({
-      where: {
-        ...(queryParams.search && {
-          OR: [
-            { name: { contains: queryParams.search, mode: "insensitive" } },
-            { id: { contains: queryParams.search, mode: "insensitive" } },
-            {
-              students: {
-                some: {
-                  name: { contains: queryParams.search, mode: "insensitive" },
-                },
-              },
-            },
-          ],
-        }),
-      },
+      where: whereClause,
     }),
   ]);
 

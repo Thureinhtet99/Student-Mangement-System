@@ -10,14 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import React from "react";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import FormContainer from "@/components/FormContainer";
 
-const renderRow = async (item: SubjectListType, index: number) => {
+const renderRow = async (item: SubjectListType) => {
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
   return (
     <TableRow key={item.id}>
-      <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
       <TableCell>{item.name}</TableCell>
       <TableCell className="hidden md:table-cell text-xs">
         {item.teachers.length > 0 ? (
@@ -57,30 +57,15 @@ const renderRow = async (item: SubjectListType, index: number) => {
             </Badge>
           </>
         ) : (
-          <>
-            {item.lessons.map((lesson) => (
-              <React.Fragment key={lesson.id}>
-                <Badge
-                  variant="secondary"
-                  className="hover:bg-slate-200 cursor-pointer"
-                >
-                  {lesson.name}
-                </Badge>
-              </React.Fragment>
-            ))}
-          </>
+          <span className="text-gray-500 text-xs">No lessons yet</span>
         )}
       </TableCell>
       <TableCell>
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="subject" type="update" data={item} />
-              </Button>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="subject" type="delete" id={item.id} />
-              </Button>
+              <FormContainer table="subject" type="update" data={item} />
+              <FormContainer table="subject" type="delete" id={item.id} />
             </>
           )}
         </div>

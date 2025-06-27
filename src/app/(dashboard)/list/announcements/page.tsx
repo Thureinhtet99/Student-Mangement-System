@@ -1,3 +1,4 @@
+import FormContainer from "@/components/FormContainer";
 import FormModal from "@/components/FormModal";
 import TableCard from "@/components/TableCard";
 import { Button } from "@/components/ui/button";
@@ -29,12 +30,8 @@ const renderRow = async (item: AnnouncementListType, index: number) => {
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="announcement" type="update" data={item} />
-              </Button>
-              <Button variant="ghost" size="icon" asChild>
-                <FormModal table="announcement" type="delete" id={item.id} />
-              </Button>
+              <FormContainer table="announcement" type="update" data={item} />
+              <FormContainer table="announcement" type="delete" id={item.id} />
             </>
           )}
         </div>
@@ -57,18 +54,21 @@ const AnnouncementListPage = async ({
   const whereClause = {
     AND: [
       {
-        OR: [
-          { classId: null },
-          {
-            class: {
-              students: {
-                some: {
-                  id: userId!,
+        ...(role !== "admin" && {
+          OR: [
+            { classId: null },
+            // Student
+            {
+              class: {
+                students: {
+                  some: {
+                    id: userId!,
+                  },
                 },
               },
             },
-          },
-        ],
+          ],
+        }),
       },
       ...(queryParams.search
         ? [

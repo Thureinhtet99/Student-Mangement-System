@@ -1,30 +1,53 @@
-"use client";
+// "use client";
 
+import prisma from "@/lib/prisma";
 import Event from "./Event";
+import { auth } from "@clerk/nextjs/server";
 
-// TEMPORARY
-const events = [
-  {
-    id: 1,
-    title: "lorem",
-    time: "2024-05-11",
-    description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry",
-  },
-  {
-    id: 2,
-    title: "lorem",
-    time: "2024-05-11",
-    description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry",
-  },
-  {
-    id: 3,
-    title: "lorem",
-    time: "2024-05-11",
-    description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry",
-  },
-];
+const Announcements = async () => {
+  const { userId, sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-const Announcements = () => {
+  const whereClause = {
+    ...(role !== "admin" && {
+      OR: [
+        { classId: null },
+        // Teacher
+        {
+          class: {
+            teacher: { id: userId! },
+          },
+        },
+        // Student
+        {
+          class: {
+            students: {
+              some: {
+                id: userId!,
+              },
+            },
+          },
+        },
+        // Parent
+        {
+          class: {
+            students: {
+              some: {
+                parent: { id: userId! },
+              },
+            },
+          },
+        },
+      ],
+    }),
+  };
+
+  const announcements = await prisma.announcement.findMany({
+    where: whereClause,
+    take: 3,
+    orderBy: { date: "desc" },
+  });
+
   return (
     <div className="bg-white p-4 rounded-md">
       <div className="flex justify-between items-center">
@@ -32,15 +55,15 @@ const Announcements = () => {
         <span className="text-xs text-gray-400">View All</span>
       </div>
       <div className="flex flex-col gap-4 mt-4">
-        {events.map((event) => (
+        {announcements.map((announce) => (
           <div
-            key={event.id}
+            key={announce.id}
             className="border border-l-4 odd:border-l-firstColor even:border-l-thirdColor rounded-md p-4"
           >
             <Event
-              title={event.title}
-              time={event.time}
-              description={event.description}
+              title={announce.title}
+              description={announce.description || ""}
+              date={announce.date || new Date()}
               type="announcement"
             />
           </div>
