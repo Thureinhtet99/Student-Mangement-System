@@ -12,10 +12,68 @@ import {
   Teacher,
   Attendance,
   Grade,
+  Admin,
+  Message,
 } from "@prisma/client";
+import React from "react";
+
+export type PerformanceType = {
+  results?: {
+    id: number;
+    score: number;
+    exam?: { name: string } | null;
+    assignment?: { name: string } | null;
+  }[];
+};
+
+// export type BadgeListItemType = ;
+
+export type BadgeListType = {
+  table: {
+    id: string | number;
+    name: string;
+  }[];
+};
+
+export type MultiSelectBoxType<
+  T extends { id: string | number; name: string }
+> = {
+  name: string;
+  subject: string;
+  verb: string;
+  items: T[];
+  selectedItems: (string | number)[];
+  setSelectedItems: React.Dispatch<React.SetStateAction<(string | number)[]>>;
+};
+
+export type TableSortType = {
+  viewType: string;
+  queryParams: { [key: string]: string | undefined };
+  type?: string;
+};
+
+export type TableSearchType = {
+  table: string;
+  queryParams: { [key: string]: string | undefined };
+};
+
+export type FormActionButtonType = {
+  form: {
+    reset: () => void;
+    clearErrors: () => void;
+  };
+  setSelectedItems?: (items: any[]) => void;
+  setIsImageLoading?: (loading: boolean) => void;
+  resetMutation: () => void;
+  isPending: boolean;
+  isImageLoading?: boolean;
+  type: "create" | "update";
+  customReset?: () => void;
+};
 
 export type FormContainerType = {
   table:
+    | "admin"
     | "teacher"
     | "student"
     | "parent"
@@ -27,7 +85,9 @@ export type FormContainerType = {
     | "result"
     | "attendance"
     | "event"
-    | "announcement";
+    | "announcement"
+    | "grade"
+    | "message";
   type: "create" | "update" | "delete";
   data?: any;
   id?: number | string;
@@ -43,12 +103,7 @@ export type PaginationType = {
 
 export type UserCardType = {
   type: "admin" | "teacher" | "student" | "parent";
-  // count: number;
   year: string;
-};
-
-export type AnnouncementListType = Announcement & {
-  class?: Class | null | undefined;
 };
 
 export type CustomTitleType = {
@@ -57,11 +112,11 @@ export type CustomTitleType = {
   marginY?: any;
 };
 
-export type EventListType = Event & { class?: Class | null };
+export type AdminListType = Admin;
 
 export type TeacherListType = Teacher & {
-  subjects: Subject[];
-  classes: Class[];
+  subjects?: Subject[];
+  classes?: Class[];
 };
 
 export type StudentListType = Student & {
@@ -73,55 +128,62 @@ export type StudentListType = Student & {
 };
 
 export type ParentListType = Parent & {
-  students: Student[];
-};
-
-export type SubjectListType = Subject & {
-  teachers: Teacher[];
-  lessons: Lesson[];
+  students?: Student[];
 };
 
 export type ClassListType = Class & {
   teacher?: Teacher | null;
-  subjects: Subject[];
-  students: Student[];
-  events: Event[];
-  announcements: Announcement[];
-  attendances: Attendance[];
+  subjects?: Subject[];
+  students?: Student[];
+  events?: Event[];
+  announcements?: Announcement[];
+};
+
+export type SubjectListType = Subject & {
+  class?: Class | null;
+  teachers?: Teacher[];
+  lessons?: Lesson[];
+  assignments?: Assignment[];
+  exams?: Exam[];
 };
 
 export type LessonListType = Lesson & {
-  subject: Subject;
-};
-
-export type ExamListType = Exam & {
-  subject: Subject & {
-    class?: (Class & { teacher?: Teacher | null }) | null;
-  };
-  results: Result[];
-};
-
-export type AssignmentListType = Assignment & {
-  subject: Subject & { class?: (Class & { teacher?: Teacher | null }) | null };
-  results: Result[];
-};
-
-export type ResultListType = {
-  id: number;
-  score: number;
-  title: string;
-  studentName: string;
-  className?: string;
-  teacherName?: string;
-  startTime: Date;
-  dueDate?: Date | null;
-};
-
-export type AttendanceListType = Attendance & {
-  student: Student;
-  class?: Class;
+  subject?: Subject | null;
 };
 
 export type GradeListType = Grade & {
   students: Student[];
 };
+
+export type ExamListType = Exam & {
+  subject?: Subject & {
+    class?: Class;
+  };
+  results: Result[];
+};
+
+export type AssignmentListType = Assignment & {
+  subject?: Subject;
+  results: Result[];
+};
+
+export type ResultListType = Result & {
+  exam?: Exam;
+  assignment?: Assignment;
+  student?: Student;
+  type?: "exam" | "assignment";
+};
+
+export type AttendanceListType = Attendance & {
+  student?: Student;
+};
+
+export type EventListType = Event & { class?: Class | null };
+
+export type AnnouncementListType = Announcement & {
+  class?: Class;
+};
+
+export type MessageListType = Message;
+
+// export { UserGender, Day };

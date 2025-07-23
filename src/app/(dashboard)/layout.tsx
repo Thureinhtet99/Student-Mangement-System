@@ -15,17 +15,17 @@ export default function DashboardLayout({
         <div className="w-[14%] md:w-[8%] lg:w-[16%] xl:w-[14%] px-1 overflow-y-auto">
           <Link
             href="/"
-            className="flex items-center justify-center lg:justify-start gap-2 sticky top-0 bg-white py-4"
+            className="flex items-center justify-center gap-2 sticky top-0 bg-white py-4"
           >
             <div className="relative w-8 h-8">
               <Image
-                src="/logo.png"
+                src="/student_management_logo.png"
                 alt="logo"
                 fill
-                className="object-contain"
+                className="object-cover"
               />
             </div>
-            <span className="hidden lg:block font-bold">Schoool</span>
+            <span className="hidden lg:block font-bold">Schooool</span>
           </Link>
           <Menu />
         </div>

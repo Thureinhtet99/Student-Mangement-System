@@ -12,12 +12,19 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
+  deleteAnnouncement,
+  deleteAssignment,
+  deleteAttendance,
   deleteClass,
+  deleteEvent,
+  deleteExam,
+  deleteLesson,
   deleteParent,
+  deleteResult,
   deleteStudent,
   deleteSubject,
   deleteTeacher,
-} from "@/lib/actions";
+} from "@/libs/actions";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { FormContainerType } from "@/types";
@@ -28,12 +35,13 @@ const deleteActionMap = {
   parent: deleteParent,
   subject: deleteSubject,
   class: deleteClass,
-  lesson: deleteSubject,
-  exam: deleteSubject,
-  assignment: deleteSubject,
-  announcement: deleteSubject,
-  result: deleteSubject,
-  event: deleteSubject,
+  lesson: deleteLesson,
+  exam: deleteExam,
+  assignment: deleteAssignment,
+  announcement: deleteAnnouncement,
+  attendance: deleteAttendance,
+  result: deleteResult,
+  event: deleteEvent,
 };
 
 // Lazy loading
@@ -163,9 +171,30 @@ const forms: {
       relatedData={relatedData}
     />
   ),
-  announcement: (type, data) => <AnnouncementForm type={type} data={data} />,
-  assignment: (type, data) => <AssignmentForm type={type} data={data} />,
-  attendance: (type, data) => <AttendanceForm type={type} data={data} />,
+  announcement: (type, data, onClose, relatedData) => (
+    <AnnouncementForm
+      type={type}
+      data={data}
+      onClose={onClose}
+      relatedData={relatedData}
+    />
+  ),
+  assignment: (type, data, onClose, relatedData) => (
+    <AssignmentForm
+      type={type}
+      data={data}
+      onClose={onClose}
+      relatedData={relatedData}
+    />
+  ),
+  attendance: (type, data, onClose, relatedData) => (
+    <AttendanceForm
+      type={type}
+      data={data}
+      onClose={onClose}
+      relatedData={relatedData}
+    />
+  ),
   class: (type, data, onClose, relatedData) => (
     <ClassForm
       type={type}
@@ -174,10 +203,38 @@ const forms: {
       relatedData={relatedData}
     />
   ),
-  event: (type, data) => <EventForm type={type} data={data} />,
-  exam: (type, data) => <ExamForm type={type} data={data} />,
-  lesson: (type, data) => <LessonForm type={type} data={data} />,
-  result: (type, data) => <ResultForm type={type} data={data} />,
+  event: (type, data, onClose, relatedData) => (
+    <EventForm
+      type={type}
+      data={data}
+      onClose={onClose}
+      relatedData={relatedData}
+    />
+  ),
+  exam: (type, data, onClose, relatedData) => (
+    <ExamForm
+      type={type}
+      data={data}
+      onClose={onClose}
+      relatedData={relatedData}
+    />
+  ),
+  lesson: (type, data, onClose, relatedData) => (
+    <LessonForm
+      type={type}
+      data={data}
+      onClose={onClose}
+      relatedData={relatedData}
+    />
+  ),
+  result: (type, data, onClose, relatedData) => (
+    <ResultForm
+      type={type}
+      data={data}
+      onClose={onClose}
+      relatedData={relatedData}
+    />
+  ),
 };
 
 const FormContent = ({
@@ -268,16 +325,15 @@ const FormModal = ({
   const handleClose = () => setOpen(false);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen} >
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          className={`${size} flex items-center justify-center rounded-full`}
+        <div
+          className={`${size} flex items-center justify-center hover:bg-accent hover:text-accent-foreground transition-colors`}
         >
           {icon}
-        </Button>
+        </div>
       </DialogTrigger>
-      <DialogContent className="w-[90vw] max-w-[800px] sm:max-w-[600px] md:max-w-[700px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-[90vw] max-w-[800px] sm:max-w-[600px] md:max-w-[700px] max-h-[85vh] overflow-y-auto rounded-lg">
         <DialogHeader>
           <DialogTitle>
             {type === "create"

@@ -1,35 +1,46 @@
-import Link from "next/link";
 import { eventColumns } from "@/data/columns";
 import { EventListType } from "@/types";
 import TableCard from "@/components/TableCard";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
-import FormModal from "@/components/FormModal";
-import prisma from "@/lib/prisma";
-import { ITEM_PER_PAGE } from "@/lib/settings";
-import { dateTimeFormat } from "@/lib/dataTimeFormat";
+import prisma from "@/libs/prisma";
+import { ITEM_PER_PAGE } from "@/libs/settings";
+import { dateTimeFormat } from "@/libs/dataTimeFormat";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 import FormContainer from "@/components/FormContainer";
+import { getSortOrder } from "@/libs/utils";
 
-const renderRow = async (item: EventListType, index: number) => {
+const renderRow = async (item: EventListType) => {
   const { sessionClaims } = await auth();
 
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
   return (
     <TableRow key={item.id}>
-      <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
-      <TableCell>{item.title}</TableCell>
-      <TableCell> {item.class?.name || "-"} </TableCell>
-      <TableCell>
-        {item.startTime ? dateTimeFormat(item.startTime) : "-"}
+      <TableCell className="w-3/12 min-w-3/12 max-w-3/12">
+        {item.name}
       </TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {item.endTime ? dateTimeFormat(item.endTime) : "-"}
+      <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
+        {item.class?.name || "-"}
       </TableCell>
-      <TableCell>
+      <TableCell className="w-3/12 min-w-3/12 max-w-3/12 text-xs">
+        {item?.description ? (
+          <span>
+            {item?.description?.length > 50
+              ? `${item?.description?.substring(0, 50)}.....`
+              : item?.description}
+          </span>
+        ) : (
+          <span>-</span>
+        )}
+      </TableCell>
+      <TableCell className="hidden md:table-cell w-2/12 min-w-2/12 max-w-2/12">
+        {item?.startTime ? dateTimeFormat(item?.startTime) : "-"}
+      </TableCell>
+      <TableCell className="hidden lg:table-cell w-2/12 min-w-2/12 max-w-2/12">
+        {item?.endTime ? dateTimeFormat(item?.endTime) : "-"}
+      </TableCell>
+      <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
@@ -46,74 +57,83 @@ const renderRow = async (item: EventListType, index: number) => {
 const ResultListPage = async ({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Promise<{ [key: string]: string | undefined }>;
 }) => {
-  const { page, ...queryParams } = searchParams;
+  const resolvedSearchParams = await searchParams;
+  const { page, ...queryParams } = resolvedSearchParams;
   const p = page ? parseInt(page) : 1;
 
   const { userId, sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  const whereClause = {
-    AND: [
-      {
+  const searchCondition = queryParams.search
+    ? {
         OR: [
-          { classId: null },
-          // Teacher
           {
-            class: {
-              teacher: { id: userId! },
+            name: {
+              contains: queryParams.search,
+              mode: Prisma.QueryMode.insensitive,
             },
           },
-          // Student
+
           {
             class: {
-              students: {
-                some: { id: userId! },
-              },
-            },
-          },
-          // Parent
-          {
-            class: {
-              students: {
-                some: {
-                  parent: { id: userId! },
-                },
+              name: {
+                contains: queryParams.search,
+                mode: Prisma.QueryMode.insensitive,
               },
             },
           },
         ],
-      },
-      ...(queryParams.search
-        ? [
+      }
+    : {};
+
+  const whereClause =
+    role === "admin"
+      ? searchCondition
+      : {
+          AND: [
             {
               OR: [
-                {
-                  title: {
-                    contains: queryParams.search,
-                    mode: Prisma.QueryMode.insensitive,
-                  },
-                },
+                // Teacher
                 {
                   class: {
-                    name: {
-                      contains: queryParams.search,
-                      mode: Prisma.QueryMode.insensitive,
+                    teacher: {
+                      id: userId as string,
+                    },
+                  },
+                },
+                // Student
+                {
+                  class: {
+                    students: {
+                      some: { id: userId as string },
+                    },
+                  },
+                },
+                // Parent
+                {
+                  class: {
+                    students: {
+                      some: {
+                        parent: {
+                          id: userId as string,
+                        },
+                      },
                     },
                   },
                 },
               ],
             },
-          ]
-        : []),
-    ],
-  };
+            searchCondition,
+          ].filter((condition) => Object.keys(condition).length > 0),
+        };
 
   const [events, count] = await prisma.$transaction([
     prisma.event.findMany({
       where: whereClause,
       include: { class: true },
+      orderBy: getSortOrder(queryParams.sort),
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),

@@ -181,3 +181,36 @@ const form = useForm<Inputs>({
   };
 
 // ...existing code...
+
+
+className="w-2/12 min-w-2/12 max-w-2/12"
+
+<TableCell className="hidden md:table-cell">
+        {/* {item.class.name} */}-
+      </TableCell>
+      <TableCell className="hidden lg:table-cell">
+        {/* {item.class.teacher?.name} */}-
+      </TableCell>
+
+
+ password: z
+    .string()
+    .optional()
+    .or(
+      z.string().min(8, { message: "Password must be at least 8 characters" })
+    ),
+
+
+        revalidatePath(`${ROUTE_CONFIG.TEACHER_LIST}`);
+
+
+npx tsc --noEmit
+w-full p-0
+
+await prisma.user.update({
+  where: { id: 1 },
+  data: {
+    bio: null       // ✅ bio will be cleared (set to null)
+    // bio: undefined // ✅ bio will be left unchanged
+  }
+});

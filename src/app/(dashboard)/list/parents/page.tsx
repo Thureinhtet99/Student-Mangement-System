@@ -3,56 +3,48 @@ import FormModal from "@/components/FormModal";
 import { ParentListType } from "@/types";
 import { TableCell, TableRow } from "@/components/ui/table";
 import TableCard from "@/components/TableCard";
-import prisma from "@/lib/prisma";
-import { ITEM_PER_PAGE } from "@/lib/settings";
+import prisma from "@/libs/prisma";
+import { ITEM_PER_PAGE } from "@/libs/settings";
 import { auth } from "@clerk/nextjs/server";
 import React from "react";
 import Link from "next/link";
 import { Prisma } from "@prisma/client";
 import FormContainer from "@/components/FormContainer";
+import { getSortOrder } from "@/libs/utils";
+import PeopleList from "@/components/PeopleList";
+import { ROUTE_CONFIG } from "@/configs/appConfig";
 
-const renderRow = async (item: ParentListType, index: number) => {
+const renderRow = async (item: ParentListType) => {
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
   return (
     <TableRow key={item.id}>
-      <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
-      <TableCell>
+      <TableCell className="w-3/12 min-w-3/12 max-w-3/12">
         <p>{item.name}</p>
         <p className="text-xs text-muted-foreground hidden md:table-cell">
           {item?.email || "-"}
         </p>
       </TableCell>
-      <TableCell className="hidden md:table-cell">
-        {item.id.length > 8
-          ? `${item.id.substring(0, 8)}${"*".repeat(5)}`
+      <TableCell className="hidden lg:table-cell w-1/12 min-w-1/12 max-w-1/12">
+        {item.id.length > 6
+          ? `${item.id.substring(0, 6)}${"*".repeat(4)}`
           : item.id}
       </TableCell>
-      <TableCell className="text-xs">
-        {item.students.length > 0 ? (
-          item.students.map((student, index) => (
-            <React.Fragment key={student.id}>
-              <Link
-                href={`/list/students/${student.id}`}
-                className="hover:text-blue-800 hover:underline"
-              >
-                {student.name}
-              </Link>
-              {index < item.students.length - 1 && ", "}
-            </React.Fragment>
-          ))
-        ) : (
-          <span className="text-gray-500">No students assigned</span>
-        )}
+      <TableCell className="w-2/12 min-w-2/12 max-w-2/12 text-xs">
+        <PeopleList
+          table={item?.students}
+          text="student"
+          route={ROUTE_CONFIG.STUDENT_LIST}
+        />
       </TableCell>
-      <TableCell className="hidden md:table-cell">
+      <TableCell className="hidden md:table-cell w-2/12 min-w-2/12 max-w-2/12 ">
         {item?.phone || "-"}
       </TableCell>
-      <TableCell className="hidden lg:table-cell">
+      <TableCell className="hidden lg:table-cell  w-3/12 min-w-3/12 max-w-3/12">
         {item?.address || "-"}
       </TableCell>
-      <TableCell>
+      <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
@@ -69,9 +61,10 @@ const renderRow = async (item: ParentListType, index: number) => {
 const ParentListPage = async ({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Promise<{ [key: string]: string | undefined }>;
 }) => {
-  const { page, ...queryParams } = searchParams;
+  const resolvedSearchParams = await searchParams;
+  const { page, ...queryParams } = resolvedSearchParams;
   const p = page ? parseInt(page) : 1;
 
   const { userId, sessionClaims } = await auth();
@@ -106,15 +99,16 @@ const ParentListPage = async ({
       : {
           AND: [
             {
-              OR: [
-                // Teacher
-                {
-                  students: {
-                    some: { parentId: userId },
+              // Teacher
+              students: {
+                some: {
+                  class: {
+                    teacherId: userId as string,
                   },
                 },
-              ],
+              },
             },
+            searchCondition,
           ].filter((condition) => Object.keys(condition).length > 0), // Remove empty conditions
         };
 
@@ -122,6 +116,7 @@ const ParentListPage = async ({
     prisma.parent.findMany({
       where: whereClause,
       include: { students: true },
+      orderBy: getSortOrder(queryParams.sort),
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),

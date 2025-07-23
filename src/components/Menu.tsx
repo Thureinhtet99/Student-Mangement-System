@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { menuItems } from "../data/menuItems";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/libs/utils";
 import {
   Accordion,
   AccordionContent,
@@ -13,23 +13,26 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/nextjs";
+import { ROUTE_CONFIG } from "@/configs/appConfig";
+import { useTransition } from "react";
 
 const Menu = () => {
   const pathname = usePathname();
   const { user } = useUser();
   const role = user?.publicMetadata.role as string;
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
-  // Helper function to check if an item should be active
   const isActive = (href: string) => {
-    // For home tab (root path), only exact match or dashboard-related paths
-    if (href === "/") {
-      // List of paths that should activate home tab
-      const homePaths = ["/", "/dashboard"];
-      return homePaths.includes(pathname) || pathname === `/${role}`;
+    if (href === ROUTE_CONFIG.HOME) {
+      const homePaths = [ROUTE_CONFIG.HOME];
+      return (
+        homePaths.includes(pathname) ||
+        pathname === `${ROUTE_CONFIG.HOME}${role}`
+      );
     }
-    
-    // For other tabs, check if pathname starts with href
-    return pathname === href || pathname.startsWith(`${href}/`);
+
+    return pathname.startsWith(href);
   };
 
   return (
@@ -55,26 +58,32 @@ const Menu = () => {
                         key={i.label}
                         variant="ghost"
                         size="sm"
-                        asChild
                         className={cn(
                           "justify-center lg:justify-start h-10 px-2 py-5 font-normal",
                           isActive(i.href)
-                            ? "bg-accent text-accent-foreground"
+                            ? "bg-accent text-accent-foreground text-secondColor"
                             : "hover:bg-accent hover:text-accent-foreground"
                         )}
+                        disabled={isPending}
+                        onClick={() => {
+                          if (pathname !== i.href) {
+                            startTransition(() => {
+                              router.push(i.href);
+                            });
+                          }
+                        }}
                       >
-                        <Link href={i.href}>
-                          <Image
-                            src={i.icon}
-                            alt={i.label}
-                            width={20}
-                            height={20}
-                            className="mr-0 lg:mr-2"
-                          />
-                          <span className="hidden lg:inline-block">
-                            {i.label}
-                          </span>
-                        </Link>
+                        <Image
+                          src={i.icon}
+                          alt={i.label}
+                          width={20}
+                          height={20}
+                          className="mr-0 lg:mr-2"
+                        />
+                        <span className="hidden lg:inline-block">
+                          {i.label}
+                        </span>
+                        
                       </Button>
                     );
                   }

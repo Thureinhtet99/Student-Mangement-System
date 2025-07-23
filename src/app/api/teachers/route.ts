@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { getTeachers } from "@/lib/actions";
+import prisma from "@/libs/prisma";
+import { getTeachers } from "@/libs/actions";
 
 // Get teachers
 export async function GET() {

@@ -3,7 +3,6 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -14,11 +13,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { LoaderCircle } from "lucide-react";
-import { createClass, updateClass } from "@/lib/actions";
+import { createClass, updateClass } from "@/libs/actions";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { classFormSchema } from "@/lib/formSchema";
+import { classFormSchema } from "@/libs/formSchema";
 import {
   Select,
   SelectContent,
@@ -26,6 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useState } from "react";
+import FormActionButton from "../FormActionButton";
+import MultiSelectBox from "../MultiSelectBox";
 
 // Schema type
 type Inputs = z.infer<typeof classFormSchema>;
@@ -41,17 +42,36 @@ const ClassForm = ({
   onClose?: () => void;
   relatedData?: any;
 }) => {
+  const [selectedSubjects, setSelectedSubjects] = useState<(string | number)[]>(
+    data?.subjects?.map((t: any) => t.id) || []
+  );
+  const [selectedStudents, setSelectedStudents] = useState<(string | number)[]>(
+    data?.students?.map((t: any) => t.id) || []
+  );
+
+  const initialSelectedStudents = data?.students?.map((t: any) => t.id) || [];
+  const initialSelectedSubjects = data?.subjects?.map((t: any) => t.id) || [];
+
   const teachers = relatedData?.teachers || [];
+  const students = relatedData?.students || [];
+  const subjects = relatedData?.subjects || [];
 
   const form = useForm<Inputs>({
     resolver: zodResolver(classFormSchema),
     defaultValues: {
-      id: data?.id || null,
       name: data?.name || "",
       capacity: data?.capacity || 0,
       teacherId: data?.teacherId || "",
     },
   });
+
+  const handleReset = () => {
+    form.reset();
+    if (type === "create" || "update") {
+      setSelectedStudents(initialSelectedStudents);
+      setSelectedSubjects(initialSelectedSubjects);
+    }
+  };
 
   // Mutation
   const {
@@ -73,12 +93,20 @@ const ClassForm = ({
         `Class is ${type === "create" ? "created" : "updated"} successfully`
       );
       form.reset();
+      setSelectedSubjects([]);
+      setSelectedStudents([]);
       onClose?.();
     },
   });
 
   const onSubmit = (values: Inputs) => {
-    mutate(values);
+    const formData = {
+      ...(type === "update" && data?.id && { id: data.id }),
+      ...values,
+      subjects: selectedSubjects,
+      students: selectedStudents,
+    };
+    mutate(formData);
   };
 
   return (
@@ -86,7 +114,6 @@ const ClassForm = ({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Class Name */}
             <FormField
               control={form.control}
               name="name"
@@ -157,34 +184,36 @@ const ClassForm = ({
                   </FormItem>
                 )}
               />
+
+              {/* Subjects */}
+              <MultiSelectBox
+                name="subject"
+                subject="class"
+                verb="including"
+                items={subjects}
+                selectedItems={selectedSubjects}
+                setSelectedItems={setSelectedSubjects}
+              />
+
+              {/* Students */}
+              <MultiSelectBox
+                name="student"
+                subject="class"
+                verb="including"
+                items={students}
+                selectedItems={selectedStudents}
+                setSelectedItems={setSelectedStudents}
+              />
             </div>
 
             {/* Form actions */}
-            <div className="flex justify-end gap-x-2">
-              <Button
-                variant="destructive"
-                type="reset"
-                onClick={() => {
-                  form.reset();
-                  resetMutation();
-                }}
-                disabled={isPending}
-              >
-                Reset
-              </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? (
-                  <>
-                    <LoaderCircle className="animate-spin h-4 w-4 mr-2" />
-                    {type === "create" ? "Creating..." : "Updating..."}
-                  </>
-                ) : type === "create" ? (
-                  "Create"
-                ) : (
-                  "Update"
-                )}
-              </Button>
-            </div>
+            <FormActionButton
+              form={form}
+              setSelectedItems={handleReset}
+              resetMutation={resetMutation}
+              isPending={isPending}
+              type={type}
+            />
           </form>
         </Form>
       </CardContent>

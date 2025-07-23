@@ -1,46 +1,52 @@
-// "use client";
-
-import prisma from "@/lib/prisma";
+import prisma from "@/libs/prisma";
 import Event from "./Event";
 import { auth } from "@clerk/nextjs/server";
+import Link from "next/link";
+import { ROUTE_CONFIG } from "@/configs/appConfig";
 
 const Announcements = async () => {
   const { userId, sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  const whereClause = {
-    ...(role !== "admin" && {
-      OR: [
-        { classId: null },
-        // Teacher
-        {
-          class: {
-            teacher: { id: userId! },
-          },
-        },
-        // Student
-        {
-          class: {
-            students: {
-              some: {
-                id: userId!,
-              },
+  const whereClause =
+    role !== "admin"
+      ? {
+          AND: [
+            {
+              OR: [
+                // Teacher
+                {
+                  class: {
+                    teacher: {
+                      id: userId as string,
+                    },
+                  },
+                },
+                // Student
+                {
+                  class: {
+                    students: {
+                      some: { id: userId as string },
+                    },
+                  },
+                },
+                // Parent
+                {
+                  class: {
+                    students: {
+                      some: {
+                        parent: {
+                          id: userId as string,
+                        },
+                      },
+                    },
+                  },
+                },
+              ],
             },
-          },
-        },
-        // Parent
-        {
-          class: {
-            students: {
-              some: {
-                parent: { id: userId! },
-              },
-            },
-          },
-        },
-      ],
-    }),
-  };
+          ].filter((condition) => Object.keys(condition).length > 0),
+        }
+      : undefined;
 
   const announcements = await prisma.announcement.findMany({
     where: whereClause,
@@ -49,25 +55,27 @@ const Announcements = async () => {
   });
 
   return (
-    <div className="bg-white p-4 rounded-md">
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Announcements</h1>
-        <span className="text-xs text-gray-400">View All</span>
-      </div>
-      <div className="flex flex-col gap-4 mt-4">
-        {announcements.map((announce) => (
-          <div
-            key={announce.id}
-            className="border border-l-4 odd:border-l-firstColor even:border-l-thirdColor rounded-md p-4"
-          >
-            <Event
-              title={announce.title}
-              description={announce.description || ""}
-              date={announce.date || new Date()}
-              type="announcement"
-            />
+    <div className="h-full">
+      <div className="space-y-4 py-2">
+        {announcements.length > 0 ? (
+          announcements.map((announce) => (
+            <div
+              key={announce.id}
+              className="border-l-4 border-l-gray-300 rounded-md p-2 shadow-sm"
+            >
+              <Event
+                title={announce.name}
+                description={announce.description || ""}
+                date={announce.date || new Date()}
+                type="announcement"
+              />
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <p>No announcements available</p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

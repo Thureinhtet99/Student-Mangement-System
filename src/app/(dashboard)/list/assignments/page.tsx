@@ -1,35 +1,31 @@
 import { assignmentColumns } from "@/data/columns";
-import FormModal from "@/components/FormModal";
 import { AssignmentListType } from "@/types";
 import TableCard from "@/components/TableCard";
 import { TableCell, TableRow } from "@/components/ui/table";
-import prisma from "@/lib/prisma";
-import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Button } from "@/components/ui/button";
+import prisma from "@/libs/prisma";
+import { ITEM_PER_PAGE } from "@/libs/settings";
 import { auth } from "@clerk/nextjs/server";
-import { dateTimeFormat } from "@/lib/dataTimeFormat";
+import { dateTimeFormat } from "@/libs/dataTimeFormat";
 import { Prisma } from "@prisma/client";
 import FormContainer from "@/components/FormContainer";
+import { getSortOrder } from "@/libs/utils";
 
-const renderRow = async (item: AssignmentListType, index: number) => {
+const renderRow = async (item: AssignmentListType) => {
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
   return (
     <TableRow key={item.id}>
-      <TableCell className="hidden md:table-cell">{index + 1}</TableCell>
-      <TableCell>{item.title}</TableCell>
-      <TableCell className="hidden md:table-cell">
-        {item.subject.name}
+      <TableCell className="w-6/12 min-w-6/12 max-w-6/12">
+        {item.name}
       </TableCell>
-      <TableCell>{item.dueDate ? dateTimeFormat(item.dueDate) : "-"}</TableCell>
-      <TableCell className="hidden md:table-cell">
-        {item.subject.class?.name}
+      <TableCell className="w-3/12 min-w-3/12 max-w-3/12 hidden md:table-cell">
+        {item?.subject?.name}
       </TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {item.subject.class?.teacher?.name}
+      <TableCell className="w-2/12 min-w-2/12 max-w-2/12">
+        {item.dueDate ? dateTimeFormat(item.dueDate) : "-"}
       </TableCell>
-      <TableCell>
+      <TableCell className="w-1/12 min-w-2/12 max-w-1/12">
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
@@ -46,79 +42,74 @@ const renderRow = async (item: AssignmentListType, index: number) => {
 const AssignmentListPage = async ({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Promise<{ [key: string]: string | undefined }>;
 }) => {
-  const { page, ...queryParams } = searchParams;
+  const resolvedSearchParams = await searchParams;
+  const { page, ...queryParams } = resolvedSearchParams;
   const p = page ? parseInt(page) : 1;
 
   const { userId, sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  // Create base where condition
-  const whereClause = {
-    AND: [
-      {
+  const searchCondition = queryParams.search
+    ? {
         OR: [
           {
-            subject: {
-              class: {
-                teacher: {
-                  id: userId!,
-                },
-              },
+            name: {
+              contains: queryParams.search,
+              mode: Prisma.QueryMode.insensitive,
             },
           },
           {
             subject: {
-              class: {
-                students: {
-                  some: {
-                    id: userId!,
-                  },
-                },
-              },
-            },
-          },
-          {
-            subject: {
-              class: {
-                students: {
-                  some: {
-                    parent: {
-                      id: userId!,
-                    },
-                  },
-                },
+              name: {
+                contains: queryParams.search,
+                mode: Prisma.QueryMode.insensitive,
               },
             },
           },
         ],
-      },
-      ...(queryParams.search
-        ? [
+      }
+    : {};
+
+  const whereClause =
+    role === "admin"
+      ? searchCondition
+      : {
+          AND: [
             {
               OR: [
-                {
-                  title: {
-                    contains: queryParams.search,
-                    mode: Prisma.QueryMode.insensitive,
-                  },
-                },
-                {
-                  subject: {
-                    name: {
-                      contains: queryParams.search,
-                      mode: Prisma.QueryMode.insensitive,
-                    },
-                  },
-                },
+                // Teacher
                 {
                   subject: {
                     class: {
                       teacher: {
-                        name: {
-                          contains: queryParams.search,
-                          mode: Prisma.QueryMode.insensitive,
+                        id: userId as string,
+                      },
+                    },
+                  },
+                },
+                // Student
+                {
+                  subject: {
+                    class: {
+                      students: {
+                        some: {
+                          id: userId as string,
+                        },
+                      },
+                    },
+                  },
+                },
+                // Parent
+                {
+                  subject: {
+                    class: {
+                      students: {
+                        some: {
+                          parent: {
+                            id: userId as string,
+                          },
                         },
                       },
                     },
@@ -126,24 +117,18 @@ const AssignmentListPage = async ({
                 },
               ],
             },
-          ]
-        : []),
-    ],
-  };
+            searchCondition, // Apply search filter if provided
+          ].filter((condition) => Object.keys(condition).length > 0), // Remove empty conditions
+        };
 
   const [assignments, count] = await prisma.$transaction([
     prisma.assignment.findMany({
       where: whereClause,
       include: {
-        subject: {
-          include: {
-            class: {
-              include: { teacher: true },
-            },
-          },
-        },
+        subject: true,
         results: true,
       },
+      orderBy: getSortOrder(queryParams.sort),
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
@@ -156,7 +141,7 @@ const AssignmentListPage = async ({
     <>
       <TableCard<AssignmentListType>
         renderRow={renderRow}
-        data={assignments}
+        data={assignments as AssignmentListType[]}
         columns={assignmentColumns}
         page={p}
         count={count}

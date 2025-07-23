@@ -8,14 +8,33 @@ datasource db {
 }
 
 model Admin {
-  id       String  @id @default(uuid())
-  username String? @unique
-  // name      String
-  // email     String    @unique
-  // password  String
-  // role      AdminRole @default(ADMIN)
-  // createdAt DateTime  @default(now())
-  // updatedAt DateTime  @updatedAt
+  id        String   @id @default(uuid())
+  username  String?  @unique
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Teacher {
+  id        String     @id @default(uuid())
+  username  String?    @unique
+  name      String
+  email     String?    @unique
+  password  String?
+  phone     String?    @unique
+  address   String?
+  gender    UserGender
+  birthday  DateTime?
+  image     String?
+  role      UserRole   @default(TEACHER)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  subjects Subject[]
+  classes  Class[]
 }
 
 model Student {
@@ -23,11 +42,13 @@ model Student {
   username  String?    @unique
   name      String
   email     String?    @unique
+  password  String?
   phone     String?    @unique
   address   String?
   gender    UserGender
   birthday  DateTime?
   image     String?
+  role      UserRole   @default(STUDENT)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -42,30 +63,15 @@ model Student {
   results     Result[]
 }
 
-model Teacher {
-  id        String     @id @default(uuid())
-  username  String?    @unique
-  name      String
-  email     String?    @unique
-  phone     String?    @unique
-  address   String?
-  gender    UserGender
-  birthday  DateTime?
-  image     String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  subjects Subject[]
-  classes  Class[]
-}
-
 model Parent {
   id        String   @id @default(uuid())
   username  String?  @unique
   name      String
   email     String?  @unique
+  password  String?
   phone     String?  @unique
   address   String?
+  role      UserRole @default(PARENT)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -86,7 +92,6 @@ model Class {
   subjects      Subject[]
   events        Event[]
   announcements Announcement[]
-  attendances   Attendance[]
 }
 
 model Subject {
@@ -111,43 +116,45 @@ model Lesson {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  subjectId Int
-  subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId Int?
+  subject   Subject? @relation(fields: [subjectId], references: [id])
 }
 
-model Grade {
+model Attendance {
   id        Int      @id @default(autoincrement())
-  level     Int      @unique
+  present   Boolean
+  date      DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  students Student[]
+  studentId String?
+  student   Student? @relation(fields: [studentId], references: [id])
+}
+
+model Assignment {
+  id        Int       @id @default(autoincrement())
+  name      String
+  dueDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  subjectId Int?
+  subject   Subject? @relation(fields: [subjectId], references: [id])
+
+  results Result[]
 }
 
 model Exam {
   id          Int      @id @default(autoincrement())
-  title       String
+  name        String
   description String?
   startTime   DateTime
   endTime     DateTime
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  subjectId Int
-  subject   Subject @relation(fields: [subjectId], references: [id])
-
-  results Result[]
-}
-
-model Assignment {
-  id        Int       @id @default(autoincrement())
-  title     String
-  dueDate   DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  subjectId Int
-  subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId Int?
+  subject   Subject? @relation(fields: [subjectId], references: [id])
 
   results Result[]
 }
@@ -163,26 +170,13 @@ model Result {
   exam         Exam?       @relation(fields: [examId], references: [id])
   assignmentId Int?
   assignment   Assignment? @relation(fields: [assignmentId], references: [id])
-  studentId    String
-  student      Student     @relation(fields: [studentId], references: [id])
-}
-
-model Attendance {
-  id        Int      @id @default(autoincrement())
-  present   Boolean
-  date      DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  studentId String
-  student   Student @relation(fields: [studentId], references: [id])
-  classId   Int?
-  Class     Class?  @relation(fields: [classId], references: [id])
+  studentId    String?
+  student      Student?    @relation(fields: [studentId], references: [id])
 }
 
 model Event {
   id          Int       @id @default(autoincrement())
-  title       String
+  name        String
   description String?
   startTime   DateTime?
   endTime     DateTime?
@@ -195,7 +189,7 @@ model Event {
 
 model Announcement {
   id          Int       @id @default(autoincrement())
-  title       String
+  name        String
   description String?
   date        DateTime?
   createdAt   DateTime  @default(now())
@@ -205,10 +199,19 @@ model Announcement {
   class   Class? @relation(fields: [classId], references: [id])
 }
 
+model Grade {
+  id        Int      @id @default(autoincrement())
+  level     Int      @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  students Student[]
+}
+
 model Message {
   id        Int      @id @default(autoincrement())
-  title     String?
-  content   String?
+  name      String?
+  content   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -220,6 +223,13 @@ model Message {
 enum UserGender {
   MALE
   FEMALE
+}
+
+enum UserRole {
+  ADMIN
+  TEACHER
+  STUDENT
+  PARENT
 }
 
 enum Day {

@@ -107,7 +107,22 @@
   margin-bottom: 5px;
 }
 
+body {
+  transition-property: opacity, background, transform, filter;
+  transition-timing-function: ease-in-out;
+  transition-duration: 500ms;
+}
 
+.page-transition {
+  opacity: 0.95;
+  pointer-events: none;
+  background: rgba(37, 99, 235, 0.08); /* Tailwind blue-600 with low opacity */
+  filter: blur(1px) brightness(1.05);
+  transition:
+    opacity 0.4s cubic-bezier(0.4,0,0.2,1),
+    background 0.4s cubic-bezier(0.4,0,0.2,1),
+    filter 0.4s cubic-bezier(0.4,0,0.2,1);
+}
 
 @layer base {
   :root {
@@ -164,8 +179,6 @@
     --chart-5: 340 75% 55%;
   }
 }
-
-
 
 @layer base {
   * {

@@ -1,15 +1,14 @@
 import { examColumns } from "@/data/columns";
-import FormModal from "@/components/FormModal";
 import { ExamListType } from "@/types";
 import TableCard from "@/components/TableCard";
 import { TableCell, TableRow } from "@/components/ui/table";
-import prisma from "@/lib/prisma";
-import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Button } from "@/components/ui/button";
-import { dateFormat, timeFormat } from "@/lib/dataTimeFormat";
+import prisma from "@/libs/prisma";
+import { ITEM_PER_PAGE } from "@/libs/settings";
+import { dateFormat, timeFormat } from "@/libs/dataTimeFormat";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 import FormContainer from "@/components/FormContainer";
+import { getSortOrder } from "@/libs/utils";
 
 const renderRow = async (item: ExamListType) => {
   const { sessionClaims } = await auth();
@@ -17,21 +16,33 @@ const renderRow = async (item: ExamListType) => {
 
   return (
     <TableRow key={item.id}>
-      <TableCell>{item.title}</TableCell>
-      <TableCell className="hidden md:table-cell">
-        {item.subject.name}
+      <TableCell className="w-2/12 min-w-2/12 max-w-2/12">
+        {item.name}
       </TableCell>
-      <TableCell className="hidden md:table-cell">
-        {item.subject.class?.name}
+      <TableCell className="hidden md:table-cell w-2/12 min-w-2/12 max-w-2/12">
+        {item?.subject?.name || "-"}
       </TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {item.subject.class?.teacher?.name}
+      <TableCell className="hidden lg:table-cell w-2/12 min-w-2/12 max-w-2/12">
+        {item?.subject?.class?.name || "-"}
       </TableCell>
-      <TableCell>{dateFormat(item.startTime)}</TableCell>
-      <TableCell className="hidden md:table-cell">
-        {timeFormat(item.startTime)} - {timeFormat(item.endTime)}
+      <TableCell className="hidden lg:table-cell text-xs w-2/12 min-w-2/12 max-w-2/12">
+        {item?.description ? (
+          <span>
+            {item?.description?.length > 50
+              ? `${item?.description?.substring(0, 50)}.....`
+              : item?.description}
+          </span>
+        ) : (
+          "-"
+        )}
       </TableCell>
-      <TableCell>
+      <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
+        {dateFormat(item.startTime)}
+      </TableCell>
+      <TableCell className="hidden md:table-cell w-2/12 min-w-2/12 max-w-2/12">
+        {timeFormat(item.startTime)}-{timeFormat(item.endTime)}
+      </TableCell>
+      <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
@@ -48,87 +59,84 @@ const renderRow = async (item: ExamListType) => {
 const ExamListPage = async ({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Promise<{ [key: string]: string | undefined }>;
 }) => {
-  const { page, ...queryParams } = searchParams;
+  const resolvedSearchParams = await searchParams;
+  const { page, ...queryParams } = resolvedSearchParams;
   const p = page ? parseInt(page) : 1;
 
   const { userId, sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  const whereClause = {
-    AND: [
-      {
+  const searchCondition = queryParams.search
+    ? {
         OR: [
-          // Teacher
+          {
+            name: {
+              contains: queryParams.search,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
           {
             subject: {
-              class: {
-                teacher: { id: userId! },
+              name: {
+                contains: queryParams.search,
+                mode: Prisma.QueryMode.insensitive,
               },
             },
           },
-          // Student
           {
             subject: {
               class: {
-                students: {
-                  some: {
-                    id: userId!,
-                  },
-                },
-              },
-            },
-          },
-          // Parent
-          {
-            subject: {
-              class: {
-                students: {
-                  some: {
-                    parent: { id: userId! },
-                  },
+                name: {
+                  contains: queryParams.search,
+                  mode: Prisma.QueryMode.insensitive,
                 },
               },
             },
           },
         ],
-      },
-      ...(queryParams.search
-        ? [
+      }
+    : {};
+
+  const whereClause =
+    role === "admin"
+      ? searchCondition
+      : {
+          AND: [
             {
               OR: [
-                {
-                  title: {
-                    contains: queryParams.search,
-                    mode: Prisma.QueryMode.insensitive,
-                  },
-                },
-                {
-                  subject: {
-                    name: {
-                      contains: queryParams.search,
-                      mode: Prisma.QueryMode.insensitive,
-                    },
-                  },
-                },
-                {
-                  subject: {
-                    class: {
-                      name: {
-                        contains: queryParams.search,
-                        mode: Prisma.QueryMode.insensitive,
-                      },
-                    },
-                  },
-                },
+                // Teacher
                 {
                   subject: {
                     class: {
                       teacher: {
-                        name: {
-                          contains: queryParams.search,
-                          mode: Prisma.QueryMode.insensitive,
+                        id: userId as string,
+                      },
+                    },
+                  },
+                },
+                // Student
+                {
+                  subject: {
+                    class: {
+                      students: {
+                        some: {
+                          id: userId as string,
+                        },
+                      },
+                    },
+                  },
+                },
+                // Parent
+                {
+                  subject: {
+                    class: {
+                      students: {
+                        some: {
+                          parent: {
+                            id: userId as string,
+                          },
                         },
                       },
                     },
@@ -136,10 +144,9 @@ const ExamListPage = async ({
                 },
               ],
             },
-          ]
-        : []),
-    ],
-  };
+            searchCondition, // Apply search filter if provided
+          ].filter((condition) => Object.keys(condition).length > 0), // Remove empty conditions
+        };
 
   const [exams, count] = await prisma.$transaction([
     prisma.exam.findMany({
@@ -147,13 +154,11 @@ const ExamListPage = async ({
       include: {
         subject: {
           include: {
-            class: {
-              include: { teacher: true },
-            },
+            class: true,
           },
         },
-        results: true,
       },
+      orderBy: getSortOrder(queryParams.sort),
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
@@ -166,7 +171,7 @@ const ExamListPage = async ({
     <>
       <TableCard<ExamListType>
         renderRow={renderRow}
-        data={exams}
+        data={exams as ExamListType[]}
         columns={examColumns}
         page={p}
         count={count}

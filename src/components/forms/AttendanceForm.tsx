@@ -3,9 +3,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowUpFromLine } from "lucide-react";
-import { announcementFormSchema } from "@/lib/formSchema";
-import { Button } from "@/components/ui/button";
+import { attendanceFormSchema } from "@/libs/formSchema";
 import {
   Form,
   FormControl,
@@ -23,25 +21,74 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { createAttendance, updateAttendance } from "@/libs/actions";
+import { formatDateLocal } from "@/libs/dataTimeFormat";
+import FormActionButton from "../FormActionButton";
 
 // Schema type
-type Inputs = z.infer<typeof announcementFormSchema>;
+type Inputs = z.infer<typeof attendanceFormSchema>;
 
 const AttendanceForm = ({
   type,
   data,
+  onClose,
+  relatedData,
 }: {
   type: "create" | "update";
   data?: any;
+  onClose?: () => void;
+  relatedData?: any;
 }) => {
+  const students = relatedData?.students || [];
+
   const form = useForm<Inputs>({
-    resolver: zodResolver(announcementFormSchema),
-   
+    resolver: zodResolver(attendanceFormSchema),
+    defaultValues: {
+      present: data?.present ?? true,
+      date: data?.date ? new Date(data.date) : undefined,
+      studentId: data?.studentId || "",
+    },
+  });
+
+  // Mutation
+  const {
+    isPending,
+    isError,
+    error,
+    mutate,
+    reset: resetMutation,
+  } = useMutation({
+    mutationFn: async (values: Inputs) => {
+      if (type === "create") {
+        return await createAttendance(values);
+      } else {
+        return await updateAttendance(values);
+      }
+    },
+    onSuccess: () => {
+      toast.success(
+        `Attendance ${type === "create" ? "created" : "updated"} successfully`
+      );
+      form.reset();
+      onClose?.();
+    },
+    onError: () => {
+      toast.error(
+        `Failed to ${type === "create" ? "create" : "update"} attendance`
+      );
+    },
   });
 
   // onSubmit
   const onSubmit = (values: Inputs) => {
-    console.log(values);
+    const formData = {
+      ...(type === "update" && data?.id && { id: data.id }),
+      ...values,
+    };
+    mutate(formData);
   };
 
   return (
@@ -49,131 +96,38 @@ const AttendanceForm = ({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {isError && (
+              <div className="bg-destructive/15 p-3 rounded-md">
+                <p className="text-xs font-medium text-destructive">
+                  {error?.message || "Something went wrong. Please try again"}
+                </p>
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="username"
+                name="studentId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Username" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="Email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="First Name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Last Name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input type="tel" placeholder="Phone" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gender</FormLabel>
+                    <FormLabel>Student</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select gender" />
+                          <SelectValue placeholder="Select a student" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
+                        {students.map((student: any) => (
+                          <SelectItem
+                            key={student.id}
+                            value={student.id.toString()}
+                          >
+                            {student.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -183,20 +137,21 @@ const AttendanceForm = ({
 
               <FormField
                 control={form.control}
-                name="birthday"
+                name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Birthday</FormLabel>
+                    <FormLabel>Date</FormLabel>
                     <FormControl>
                       <Input
                         type="date"
                         onChange={(e) => {
-                          const date = new Date(e.target.value);
-                          field.onChange(date);
+                          const value = e.target.value;
+                          field.onChange(value ? new Date(value) : undefined);
                         }}
                         value={
-                          field.value instanceof Date
-                            ? field.value.toISOString().split("T")[0]
+                          field.value instanceof Date &&
+                          !isNaN(field.value.getTime())
+                            ? formatDateLocal(field.value)
                             : ""
                         }
                       />
@@ -205,65 +160,36 @@ const AttendanceForm = ({
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="image"
-                render={({ field: { value, onChange, ...field } }) => (
-                  <FormItem>
-                    <FormLabel>Profile Image</FormLabel>
-                    <FormControl>
-                      <div className="grid w-full gap-1.5">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full flex items-center justify-center gap-2"
-                          onClick={() =>
-                            document.getElementById("image-upload")?.click()
-                          }
-                        >
-                          <ArrowUpFromLine className="h-4 w-4" />
-                          {value ? "Change photo" : "Upload photo"}
-                        </Button>
-                        {value && (
-                          <p className="text-xs text-muted-foreground mt-1 text-center">
-                            Selected file: {value.name}
-                          </p>
-                        )}
-                        <Input
-                          id="image-upload"
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              onChange(file);
-                            }
-                          }}
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
-            <div className="flex justify-end gap-x-2">
-              <Button
-                variant="destructive"
-                type="reset"
-                className="w-full md:w-auto"
-                onClick={() => form.reset()}
-              >
-                Reset
-              </Button>
-              <Button type="submit" className="w-full md:w-auto">
-                {type === "create" ? "Create" : "Update"}
-              </Button>
-            </div>
+            <FormField
+              control={form.control}
+              name="present"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Present</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Check this box if the student was present
+                    </p>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormActionButton
+              form={form}
+              resetMutation={resetMutation}
+              isPending={isPending}
+              type={type}
+            />
           </form>
         </Form>
       </CardContent>

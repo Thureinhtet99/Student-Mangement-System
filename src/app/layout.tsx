@@ -3,14 +3,15 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/sonner";
+import { APP_CONFIG } from "@/configs/appConfig";
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: "300"
+  weight: "300",
 });
 
 export const metadata: Metadata = {
-  title: "School Management System",
+  title: `${APP_CONFIG.APP_NAME}`,
   description: "Next.js School Management System",
 };
 

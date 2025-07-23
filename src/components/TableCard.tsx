@@ -2,10 +2,10 @@ import React, { ReactNode } from "react";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import { Filter, SortDesc } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import FormContainer from "./FormContainer";
+import TableSort from "./TableSort";
 
 type TableCardProps<T> = {
   renderRow: (item: T, index: number) => ReactNode;
@@ -23,14 +23,15 @@ type TableCardProps<T> = {
     | "assignment"
     | "result"
     | "event"
-    | "announcement";
+    | "announcement"
+    | "attendance";
   count: number;
   page: number;
   queryParams: { [key: string]: string | undefined };
   role?: string;
 };
 
-const TableCard = <T extends Record<string, any>>({
+const TableCard = async <T extends Record<string, any>>({
   renderRow,
   data,
   columns,
@@ -41,31 +42,65 @@ const TableCard = <T extends Record<string, any>>({
   queryParams,
   role,
 }: TableCardProps<T>) => {
+  const serializedQueryParams = await JSON.parse(JSON.stringify(queryParams));
+
   return (
     <>
-      <Card className="flex-1 overflow-y-auto border-0">
-        <CardHeader className="py-4">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <CardTitle className="text-lg">{title}</CardTitle>
-            <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-              <TableSearch queryParams={queryParams} />
-              <div className="flex items-center gap-2 self-end">
-                <Button variant="outline" size="icon" title="Filter">
-                  <Filter className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" title="Sort">
-                  <SortDesc className="h-4 w-4" />
-                </Button>
-                {role === "admin" && (
-                  <Button variant="ghost" size="icon">
-                    <FormContainer table={table} type="create" />
-                  </Button>
-                )}
+      <div className="flex-1 overflow-y-auto">
+        <CardHeader className="py-4 px-2 bg-muted/20">
+          <div className="flex flex-col gap-4 ">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex w-full items-center justify-between md:block">
+                <CardTitle className="text-md md:text-lg font-semibold text-foreground">
+                  {title}
+                </CardTitle>
+                {/* Mobile: Add and Sort button inline with title */}
+                <div className="flex md:hidden items-center gap-2">
+                  <TableSort
+                    viewType="mobile-view"
+                    queryParams={serializedQueryParams}
+                  />
+                  {role === "admin" && (
+                    <Button variant="ghost" size="icon" title="Add">
+                      <FormContainer table={table} type="create" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+              {/* Desktop: Search bar and controls side by side */}
+              <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                <div className="hidden md:flex items-center gap-2">
+                  <TableSearch
+                    table={table}
+                    queryParams={serializedQueryParams}
+                  />
+                  <div className="flex items-center gap-2">
+                    {/* Sort Select */}
+                    <TableSort
+                      viewType="web-view"
+                      queryParams={serializedQueryParams}
+                      type={table}
+                    />
+
+                    {role === "admin" && (
+                      <Button variant="ghost" size="icon" title="Add">
+                        <FormContainer table={table} type="create" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                {/* Mobile: Search bar below title/buttons */}
+                <div className="flex md:hidden w-full">
+                  <TableSearch
+                    table={table}
+                    queryParams={serializedQueryParams}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="py-0">
+        <CardContent className="p-0 my-1">
           <Table
             columns={columns}
             renderRow={renderRow}
@@ -73,8 +108,8 @@ const TableCard = <T extends Record<string, any>>({
             role={role}
           />
         </CardContent>
-      </Card>
-      <div className="my-2">
+      </div>
+      <div className="my-1">
         <Pagination page={page} count={count} hasNextPage={data.length > 0} />
       </div>
     </>

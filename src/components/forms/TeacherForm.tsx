@@ -3,14 +3,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ArrowUpFromLine,
-  LoaderCircle,
-  Search,
-  X,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { ArrowUpFromLine, LoaderCircle, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -22,28 +15,19 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent} from "@/components/ui/card";
-import { teacherFormSchema } from "@/lib/formSchema";
+import { Card, CardContent } from "@/components/ui/card";
+import { teacherFormSchema } from "@/libs/formSchema";
 import { useState } from "react";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../ui/dialog";
-import { ScrollArea } from "../ui/scroll-area";
-import { Checkbox } from "../ui/checkbox";
-import { Badge } from "../ui/badge";
 import { useMutation } from "@tanstack/react-query";
-import { createTeacher, updateTeacher } from "@/lib/actions";
+import { createTeacher, updateTeacher } from "@/libs/actions";
 import { toast } from "sonner";
 import Image from "next/image";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "../ui/label";
 import { Separator } from "@/components/ui/separator";
+import { CLOUDINARY_CONFIG } from "@/configs/appConfig";
+import FormActionButton from "../FormActionButton";
+import MultiSelectBox from "../MultiSelectBox";
 
 // Schema type
 type Inputs = z.infer<typeof teacherFormSchema>;
@@ -60,12 +44,21 @@ const TeacherForm = ({
   relatedData?: any;
 }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [selectedSubjects, setSelectedSubjects] = useState<number[]>(
+  const [selectedSubjects, setSelectedSubjects] = useState<(string | number)[]>(
     data?.subjects?.map((t: any) => t.id) || []
   );
-  const [subjectSearchQuery, setSubjectSearchQuery] = useState("");
+  const [selectedClassItems, setSelectedClassItems] = useState<
+    (string | number)[]
+  >(data?.classes?.map((t: any) => t.id) || []);
+  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [shouldRemovePhoto, setShouldRemovePhoto] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const initialSelectedSubjects = data?.subjects?.map((t: any) => t.id) || [];
+  const initialSelectedClasses = data?.classes?.map((t: any) => t.id) || [];
 
   const subjects = relatedData?.subjects || [];
+  const classItems = relatedData?.classItems || [];
 
   const form = useForm<Inputs>({
     resolver: zodResolver(teacherFormSchema),
@@ -82,20 +75,14 @@ const TeacherForm = ({
     },
   });
 
-  const filteredSubjects = subjects.filter((subject: any) =>
-    subject.name.toLowerCase().includes(subjectSearchQuery.toLowerCase())
-  );
-
-  const toggleSubjectSelection = (subjectId: number) => {
-    setSelectedSubjects((prev) =>
-      prev.includes(subjectId)
-        ? prev.filter((id) => id !== subjectId)
-        : [...prev, subjectId]
-    );
-  };
-
-  const removeSubject = (subjectId: number) => {
-    setSelectedSubjects((prev) => prev.filter((id) => id !== subjectId));
+  const handleReset = () => {
+    form.reset();
+    setShouldRemovePhoto(false);
+    setPreviewUrl(null);
+    if (type === "create" || "update") {
+      setSelectedSubjects(initialSelectedSubjects);
+      setSelectedClassItems(initialSelectedClasses);
+    }
   };
 
   // Mutation
@@ -119,13 +106,14 @@ const TeacherForm = ({
       );
       form.reset();
       setSelectedSubjects([]);
+      setSelectedClassItems([]);
+      setShouldRemovePhoto(false);
+      setPreviewUrl(null);
       onClose?.();
     },
-    onError: (error) => {
+    onError: () => {
       toast.error(
-        `Failed to ${type === "create" ? "create" : "update"} teacher: ${
-          error.message
-        }`
+        `Failed to ${type === "create" ? "create" : "update"} teacher`
       );
     },
   });
@@ -135,13 +123,28 @@ const TeacherForm = ({
     const formData = {
       ...(type === "update" && data?.id && { id: data.id }),
       ...values,
-      subjects: selectedSubjects,
+      ...(shouldRemovePhoto && { removePhoto: true }),
+      subjects: selectedSubjects.map((subject) => Number(subject)),
+      classes: selectedClassItems.map((classItem) => Number(classItem)),
     };
     mutate(formData);
   };
 
+  // Helper function to get display image
+  const getDisplayImage = () => {
+    if (shouldRemovePhoto) return null;
+    if (previewUrl) return previewUrl;
+    if (data?.image && type === "update") return data.image;
+    return null;
+  };
+
+  // Helper function to check if there's a database image
+  const hasDbImage = () => {
+    return type === "update" && data?.image;
+  };
+
   return (
-    <Card className="w-full shadow-sm">
+    <Card className="w-full py-4">
       <CardContent>
         <Form {...form}>
           <form
@@ -150,8 +153,8 @@ const TeacherForm = ({
           >
             {isError && (
               <div className="bg-destructive/15 p-3 rounded-md">
-                <p className="text-sm font-medium text-destructive">
-                  {error?.message || "Something went wrong. Please try again."}
+                <p className="text-xs font-medium text-destructive">
+                  {error?.message || "Something went wrong. Please try again"}
                 </p>
               </div>
             )}
@@ -261,6 +264,15 @@ const TeacherForm = ({
                       )}
                     />
 
+                    <MultiSelectBox
+                      name="subject"
+                      subject="teacher"
+                      verb="teaching"
+                      items={subjects}
+                      selectedItems={selectedSubjects}
+                      setSelectedItems={setSelectedSubjects}
+                    />
+
                     <FormField
                       control={form.control}
                       name="phone"
@@ -307,6 +319,7 @@ const TeacherForm = ({
                           <FormLabel>Gender</FormLabel>
                           <FormControl>
                             <RadioGroup
+                              className="gap-1"
                               onValueChange={field.onChange}
                               value={field.value}
                             >
@@ -323,6 +336,15 @@ const TeacherForm = ({
                           <FormMessage />
                         </FormItem>
                       )}
+                    />
+
+                    <MultiSelectBox
+                      name="class"
+                      subject="teacher"
+                      verb="including"
+                      items={classItems}
+                      selectedItems={selectedClassItems}
+                      setSelectedItems={setSelectedClassItems}
                     />
 
                     <FormField
@@ -344,7 +366,7 @@ const TeacherForm = ({
                                 field.value instanceof Date &&
                                 !isNaN(field.value.getTime())
                                   ? field.value.toISOString().split("T")[0]
-                                  : undefined
+                                  : ""
                               }
                             />
                           </FormControl>
@@ -352,108 +374,6 @@ const TeacherForm = ({
                         </FormItem>
                       )}
                     />
-
-                    <FormItem className="space-y-2">
-                      <FormLabel>Subjects</FormLabel>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-between"
-                            type="button"
-                          >
-                            <span>
-                              {selectedSubjects.length > 0
-                                ? `${selectedSubjects.length} subject${
-                                    selectedSubjects.length > 1 ? "s" : ""
-                                  } selected`
-                                : "Select subjects"}
-                            </span>
-                            <Search className="h-4 w-4 ml-2 opacity-50" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px]">
-                          <DialogHeader>
-                            <DialogTitle>Select Subjects</DialogTitle>
-                          </DialogHeader>
-                          <div className="py-4">
-                            <div className="relative mb-4">
-                              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                placeholder="Search subjects..."
-                                value={subjectSearchQuery}
-                                onChange={(e) =>
-                                  setSubjectSearchQuery(e.target.value)
-                                }
-                                className="pl-8"
-                              />
-                            </div>
-                            <ScrollArea className="h-[300px] pr-4">
-                              {filteredSubjects.length === 0 ? (
-                                <p className="text-center text-muted-foreground py-4">
-                                  No subjects found
-                                </p>
-                              ) : (
-                                <div className="space-y-3">
-                                  {filteredSubjects.map((subject: any) => (
-                                    <div
-                                      key={subject.id}
-                                      className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50"
-                                    >
-                                      <Checkbox
-                                        id={`subject-${subject.id}`}
-                                        checked={selectedSubjects.includes(
-                                          subject.id
-                                        )}
-                                        onCheckedChange={() =>
-                                          toggleSubjectSelection(subject.id)
-                                        }
-                                      />
-                                      <label
-                                        htmlFor={`subject-${subject.id}`}
-                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                                      >
-                                        {subject.name}
-                                      </label>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </ScrollArea>
-                          </div>
-                          <DialogFooter>
-                            <DialogClose asChild>
-                              <Button type="button">Done</Button>
-                            </DialogClose>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                      {selectedSubjects.length > 0 && (
-                        <div className="flex flex-wrap gap-2 max-h-[100px] overflow-y-auto p-1">
-                          {selectedSubjects.map((subjectId) => {
-                            const subject = subjects.find(
-                              (t: any) => t.id === subjectId
-                            );
-                            return (
-                              <Badge
-                                key={subjectId}
-                                variant="secondary"
-                                className="flex items-center gap-1 py-1.5"
-                              >
-                                {subject?.name}
-                                <X
-                                  className="h-3 w-3 cursor-pointer ml-1"
-                                  onClick={() => removeSubject(subjectId)}
-                                />
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      )}
-                      <FormDescription>
-                        Select the subjects this teacher will be teaching.
-                      </FormDescription>
-                    </FormItem>
                   </div>
                 </div>
               </div>
@@ -461,7 +381,9 @@ const TeacherForm = ({
               <Separator />
 
               <div>
-                <h3 className="text-lg font-medium mb-6">Profile Picture</h3>
+                <h3 className="text-lg font-medium mb-6">
+                  Profile Picture (Optional)
+                </h3>
                 <FormField
                   control={form.control}
                   name="image"
@@ -470,17 +392,27 @@ const TeacherForm = ({
                       <FormControl>
                         <div className="flex flex-col sm:flex-row items-center gap-6">
                           <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-primary/20 bg-muted flex items-center justify-center">
-                            {field.value ? (
+                            {isImageLoading && (
+                              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10 animate-in fade-in duration-300">
+                                <LoaderCircle className="animate-spin h-6 w-6" />
+                              </div>
+                            )}
+                            {getDisplayImage() ? (
                               <Image
-                                src={field.value}
+                                src={getDisplayImage()!}
                                 alt="Profile"
                                 fill
-                                className="object-cover"
+                                className="object-cover transition-all duration-300"
                                 sizes="128px"
+                                onLoadStart={() => setIsImageLoading(true)}
+                                onLoad={() => setIsImageLoading(false)}
+                                onError={() => setIsImageLoading(false)}
                               />
                             ) : (
                               <span className="text-muted-foreground text-xs text-center px-2">
-                                No image selected
+                                {shouldRemovePhoto
+                                  ? "Photo will be removed"
+                                  : "No image selected"}
                               </span>
                             )}
                           </div>
@@ -496,81 +428,140 @@ const TeacherForm = ({
                                   const file = e.target.files?.[0];
                                   if (!file) return;
 
-                                  if (file.size > 2000000) {
-                                    toast.error(
-                                      "File size must be less than 2MB"
-                                    );
-                                    return;
-                                  }
+                                  setIsImageLoading(true);
 
                                   try {
-                                    const formData = new FormData();
-                                    formData.append("image", file);
-                                    formData.append(
-                                      "upload_preset",
-                                      "student_management_system"
-                                    );
-
-                                    toast.loading("Uploading image...");
-
-                                    const response = await fetch(
-                                      "https://api.cloudinary.com/v1_1/your-cloud-name/image/upload",
-                                      {
-                                        method: "POST",
-                                        body: formData,
-                                      }
-                                    );
-
-                                    if (!response.ok) {
-                                      throw new Error("Upload failed");
+                                    // Validate file size
+                                    if (
+                                      file.size >
+                                      CLOUDINARY_CONFIG.MAX_FILE_SIZE
+                                    ) {
+                                      toast.error(
+                                        "File size must be less than 2MB"
+                                      );
+                                      return;
                                     }
 
-                                    const data = await response.json();
-                                    field.onChange(data.secure_url);
-                                    toast.dismiss();
+                                    // Validate file type
+                                    const fileType = file.type.split("/")[1];
+                                    if (
+                                      !CLOUDINARY_CONFIG.ALLOWED_FORMATS.includes(
+                                        fileType
+                                      )
+                                    ) {
+                                      toast.error(
+                                        "Only JPG, PNG, and WebP files are allowed"
+                                      );
+                                      return;
+                                    }
+
+                                    // Create preview URL
+                                    const url = URL.createObjectURL(file);
+                                    setPreviewUrl(url);
+
+                                    // Update form field
+                                    field.onChange(file);
+                                    setShouldRemovePhoto(false);
+
                                     toast.success(
-                                      "Image uploaded successfully"
+                                      "Image selected successfully"
                                     );
                                   } catch (error) {
-                                    toast.dismiss();
-                                    toast.error(
-                                      `Upload failed: ${
-                                        error instanceof Error
-                                          ? error.message
-                                          : "Unknown error"
-                                      }`
-                                    );
+                                    toast.error("Failed to process image");
+                                  } finally {
+                                    setIsImageLoading(false);
                                   }
                                 }}
                               />
                               <Button
                                 type="button"
                                 variant="secondary"
-                                className="flex items-center justify-center gap-2"
+                                className="flex items-center justify-center gap-2 hover:scale-105 transition-all duration-200"
                                 onClick={() =>
                                   document
                                     .getElementById("imageUpload")
                                     ?.click()
                                 }
+                                disabled={isImageLoading}
                               >
-                                <ArrowUpFromLine className="h-4 w-4" />
-                                {field.value ? "Change photo" : "Upload photo"}
+                                {isImageLoading ? (
+                                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <ArrowUpFromLine className="h-4 w-4" />
+                                )}
+                                {getDisplayImage()
+                                  ? "Change photo"
+                                  : "Upload photo"}
                               </Button>
 
-                              {field.value && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => field.onChange("")}
-                                >
-                                  Remove photo
-                                </Button>
+                              {(getDisplayImage() || shouldRemovePhoto) && (
+                                <div className="flex gap-2">
+                                  {!shouldRemovePhoto ? (
+                                    <>
+                                      {/* Only show remove button if there's a database image OR a preview */}
+                                      {(hasDbImage() || previewUrl) && (
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            // Clean up preview URL
+                                            if (previewUrl) {
+                                              URL.revokeObjectURL(previewUrl);
+                                              setPreviewUrl(null);
+                                            }
+                                            field.onChange("");
+
+                                            // Only set shouldRemovePhoto if there's a database image
+                                            if (hasDbImage()) {
+                                              setShouldRemovePhoto(true);
+                                            }
+
+                                            setIsImageLoading(false);
+                                          }}
+                                          disabled={isImageLoading}
+                                        >
+                                          {hasDbImage()
+                                            ? "Remove photo"
+                                            : "Clear selection"}
+                                        </Button>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled
+                                      >
+                                        Photo marked for removal
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => {
+                                          setShouldRemovePhoto(false);
+                                          // Restore original image if in update mode
+                                          if (
+                                            type === "update" &&
+                                            data?.image
+                                          ) {
+                                            field.onChange(data.image);
+                                          }
+                                        }}
+                                      >
+                                        Undo
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
                               )}
                             </div>
                             <FormDescription>
-                              Upload a profile picture (JPG, PNG or WebP, max
-                              2MB)
+                              Upload a profile picture (optional - JPG, PNG or
+                              WebP, max 2MB)
                             </FormDescription>
                           </div>
                         </div>
@@ -582,37 +573,15 @@ const TeacherForm = ({
               </div>
             </div>
 
-            <div className="flex justify-end gap-x-3 pt-4">
-              <Button
-                variant="outline"
-                type="button"
-                className="w-full sm:w-auto"
-                onClick={() => {
-                  form.reset();
-                  setSelectedSubjects([]);
-                  resetMutation();
-                }}
-                disabled={isPending}
-              >
-                Reset
-              </Button>
-              <Button
-                type="submit"
-                className="w-full sm:w-auto"
-                disabled={isPending}
-              >
-                {isPending ? (
-                  <>
-                    <LoaderCircle className="animate-spin h-4 w-4 mr-2" />
-                    {type === "create" ? "Creating..." : "Updating..."}
-                  </>
-                ) : type === "create" ? (
-                  "Create"
-                ) : (
-                  "Update"
-                )}
-              </Button>
-            </div>
+            <FormActionButton
+              form={form}
+              setSelectedItems={handleReset}
+              setIsImageLoading={setIsImageLoading}
+              resetMutation={resetMutation}
+              isPending={isPending}
+              isImageLoading={isImageLoading}
+              type={type}
+            />
           </form>
         </Form>
       </CardContent>

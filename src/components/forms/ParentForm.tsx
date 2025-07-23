@@ -3,12 +3,11 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoaderCircle, Eye, EyeOff, Search, X } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -16,24 +15,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { parentFormSchema } from "@/lib/formSchema";
+import { parentFormSchema } from "@/libs/formSchema";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { useMutation } from "@tanstack/react-query";
-import { createParent, updateParent } from "@/lib/actions";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../ui/dialog";
-import { ScrollArea } from "../ui/scroll-area";
-import { Checkbox } from "../ui/checkbox";
-import { Badge } from "../ui/badge";
+import { createParent, updateParent } from "@/libs/actions";
+import FormActionButton from "../FormActionButton";
+import MultiSelectBox from "../MultiSelectBox";
+
 // Schema type
 type Inputs = z.infer<typeof parentFormSchema>;
 
@@ -49,10 +39,11 @@ const ParentForm = ({
   relatedData?: any;
 }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [selectedStudents, setSelectedStudents] = useState<string[]>(
+  const [selectedStudents, setSelectedStudents] = useState<(string | number)[]>(
     data?.students?.map((t: any) => t.id) || []
   );
-  const [studentSearchQuery, setStudentSearchQuery] = useState("");
+
+  const initialSelectedStudents = data?.students?.map((t: any) => t.id) || [];
 
   const students = relatedData?.students || [];
 
@@ -65,24 +56,14 @@ const ParentForm = ({
       name: data?.name || "",
       phone: data?.phone || "",
       address: data?.address || "",
-      students: data?.students?.map((t: any) => t.id) || [],
     },
   });
 
-  const filteredStudents = students.filter((student: any) =>
-    student.name.toLowerCase().includes(studentSearchQuery.toLowerCase())
-  );
-
-  const toggleStudentSelection = (studentId: string) => {
-    setSelectedStudents((prev) =>
-      prev.includes(studentId)
-        ? prev.filter((id) => id !== studentId)
-        : [...prev, studentId]
-    );
-  };
-
-  const removeStudent = (studentId: string) => {
-    setSelectedStudents((prev) => prev.filter((id) => id !== studentId));
+  const handleReset = () => {
+    form.reset();
+    if (type === "update") {
+      setSelectedStudents(initialSelectedStudents);
+    }
   };
 
   // Mutation
@@ -105,7 +86,7 @@ const ParentForm = ({
         `Parent ${type === "create" ? "created" : "updated"} successfully`
       );
       form.reset();
-      setSelectedStudents([]); // Reset selected students
+      setSelectedStudents([]);
       onClose?.();
     },
     onError: (error) => {
@@ -191,7 +172,7 @@ const ParentForm = ({
                           <div className="relative">
                             <Input
                               type={isPasswordVisible ? "text" : "password"}
-                              placeholder="••••••••"
+                              placeholder="*******"
                               {...field}
                             />
                             <Button
@@ -272,172 +253,26 @@ const ParentForm = ({
                   </div>
 
                   <div className="space-y-8">
-                    <FormField
-                      control={form.control}
-                      name="students"
-                      render={({ field, fieldState }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel>Students</FormLabel>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className="w-full justify-between"
-                                type="button"
-                              >
-                                <span>
-                                  {selectedStudents.length > 0
-                                    ? `${selectedStudents.length} student${
-                                        selectedStudents.length > 1 ? "s" : ""
-                                      } selected`
-                                    : "Select students"}
-                                </span>
-                                <Search className="h-4 w-4 ml-2 opacity-50" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[425px]">
-                              <DialogHeader>
-                                <DialogTitle>Select Students</DialogTitle>
-                              </DialogHeader>
-                              <div className="py-4">
-                                <div className="relative mb-4">
-                                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                  <Input
-                                    placeholder="Search students..."
-                                    value={studentSearchQuery}
-                                    onChange={(e) =>
-                                      setStudentSearchQuery(e.target.value)
-                                    }
-                                    className="pl-8"
-                                  />
-                                </div>
-                                <ScrollArea className="h-[300px] pr-4">
-                                  {filteredStudents.length === 0 ? (
-                                    <p className="text-center text-muted-foreground py-4">
-                                      No students found
-                                    </p>
-                                  ) : (
-                                    <div className="space-y-3">
-                                      {filteredStudents.map((student: any) => (
-                                        <div
-                                          key={student.id}
-                                          className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50"
-                                        >
-                                          <Checkbox
-                                            id={`student-${student.id}`}
-                                            checked={selectedStudents.includes(
-                                              student.id
-                                            )}
-                                            onCheckedChange={() => {
-                                              toggleStudentSelection(
-                                                student.id
-                                              );
-                                              field.onChange(
-                                                selectedStudents.includes(
-                                                  student.id
-                                                )
-                                                  ? selectedStudents.filter(
-                                                      (id) => id !== student.id
-                                                    )
-                                                  : [
-                                                      ...selectedStudents,
-                                                      student.id,
-                                                    ]
-                                              );
-                                            }}
-                                          />
-                                          <label
-                                            htmlFor={`student-${student.id}`}
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                                          >
-                                            {student.name}
-                                          </label>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </ScrollArea>
-                              </div>
-                              <DialogFooter>
-                                <DialogClose asChild>
-                                  <Button type="button">Done</Button>
-                                </DialogClose>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                          {selectedStudents.length > 0 && (
-                            <div className="flex flex-wrap gap-2 max-h-[100px] overflow-y-auto p-1">
-                              {selectedStudents.map((studentId) => {
-                                const student = students.find(
-                                  (s: any) => s.id === studentId
-                                );
-                                return (
-                                  <Badge
-                                    key={studentId}
-                                    variant="secondary"
-                                    className="flex items-center gap-1 py-1.5"
-                                  >
-                                    {student?.name}
-                                    <X
-                                      className="h-3 w-3 cursor-pointer ml-1"
-                                      onClick={() => {
-                                        removeStudent(studentId);
-                                        field.onChange(
-                                          selectedStudents.filter(
-                                            (id) => id !== studentId
-                                          )
-                                        );
-                                      }}
-                                    />
-                                  </Badge>
-                                );
-                              })}
-                            </div>
-                          )}
-                          <FormMessage />
-                          {!fieldState.error && (
-                            <FormDescription>
-                              Select the students of this parent
-                            </FormDescription>
-                          )}
-                        </FormItem>
-                      )}
+                    <MultiSelectBox
+                      name="student"
+                      subject="parent"
+                      verb="including"
+                      items={students}
+                      selectedItems={selectedStudents}
+                      setSelectedItems={setSelectedStudents}
                     />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-x-3 pt-4">
-              <Button
-                variant="outline"
-                type="button"
-                className="w-full sm:w-auto"
-                onClick={() => {
-                  form.reset();
-                  resetMutation();
-                }}
-                disabled={isPending}
-              >
-                Reset
-              </Button>
-              <Button
-                type="submit"
-                className="w-full sm:w-auto"
-                disabled={isPending}
-              >
-                {isPending ? (
-                  <>
-                    <LoaderCircle className="animate-spin h-4 w-4 mr-2" />
-                    {type === "create" ? "Creating..." : "Updating..."}
-                  </>
-                ) : type === "create" ? (
-                  "Create"
-                ) : (
-                  "Update"
-                )}
-              </Button>
-            </div>
+            <FormActionButton
+              form={form}
+              setSelectedItems={handleReset} // Pass custom reset function instead of setSelectedStudents
+              resetMutation={resetMutation}
+              isPending={isPending}
+              type={type}
+            />
           </form>
         </Form>
       </CardContent>

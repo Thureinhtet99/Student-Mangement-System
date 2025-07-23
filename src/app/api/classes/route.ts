@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { getClasses } from "@/lib/actions";
+import prisma from "@/libs/prisma";
+import { getClasses } from "@/libs/actions";
 
 // Get classes
 export async function GET() {
   try {
-    const { classes } = await getClasses();
+    const classes = await getClasses();
     return NextResponse.json(
       { classes, success: "Fetched classes successfully" },
       { status: 200 }

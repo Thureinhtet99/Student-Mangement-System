@@ -1,41 +1,65 @@
-import { resultColumns } from "@/data/columns";
-import { role } from "@/lib/data";
-import FormModal from "@/components/FormModal";
+import { assignmentResultColumns, examResultColumns } from "@/data/columns";
 import { ResultListType } from "@/types";
 import { TableCell, TableRow } from "@/components/ui/table";
 import TableCard from "@/components/TableCard";
-import { Button } from "@/components/ui/button";
-import prisma from "@/lib/prisma";
-import { ITEM_PER_PAGE } from "@/lib/settings";
-import { dateFormat } from "@/lib/dataTimeFormat";
+import ResultTabs from "@/components/ResultTabs";
+import prisma from "@/libs/prisma";
+import { ITEM_PER_PAGE } from "@/libs/settings";
+import { dateFormat } from "@/libs/dataTimeFormat";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 import FormContainer from "@/components/FormContainer";
+import { resultSortOrder } from "@/libs/utils";
 
 const renderRow = async (item: ResultListType) => {
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
+  // Determine the display name based on type
+  const displayName = item.exam?.name || item.assignment?.name;
+  // const resultType = item.exam ? "exam" : "assignment";
+
   return (
     <TableRow key={item.id}>
-      <TableCell>{item.title}</TableCell>
-      <TableCell>{item.studentName}</TableCell>
-      <TableCell>{item.score}</TableCell>
-      <TableCell className="hidden md:table-cell">
-        {item?.className || "-"}
+      <TableCell className="w-2/12 min-w-2/12 max-w-2/12">
+        {item?.student?.name}
       </TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {item?.teacherName || "-"}
+      <TableCell className="w-2/12 min-w-2/12 max-w-2/12">
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            item.score >= 90
+              ? "bg-green-100 text-green-800"
+              : item.score >= 40
+              ? "bg-yellow-100 text-yellow-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          {item.score} / 100
+        </span>
       </TableCell>
-      <TableCell className="hidden md:table-cell">
-        {item?.startTime ? dateFormat(item.startTime) : "-"}
+      <TableCell className="w-2/12 min-w-2/12 max-w-2/12 hidden md:table-cell">
+        {displayName}
       </TableCell>
-      <TableCell>
+      <TableCell className="w-3/12 min-w-3/12 max-w-3/12 hidden lg:table-cell">
+        {item?.comment ? (
+          <span>
+            {item?.comment?.length > 50
+              ? `${item?.comment?.substring(0, 50)}.....`
+              : item?.comment}
+          </span>
+        ) : (
+          "-"
+        )}
+      </TableCell>
+      <TableCell className="w-1/12 min-w-1/12 max-w-1/12 hidden md:table-cell">
+        {item.createdAt ? dateFormat(item.createdAt) : "-"}
+      </TableCell>
+      <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
-                <FormContainer table="result" type="update" data={item.id} />
-                <FormContainer table="result" type="delete" id={item.id} />
+              <FormContainer table="result" type="update" data={item} />
+              <FormContainer table="result" type="delete" id={item.id} />
             </>
           )}
         </div>
@@ -47,136 +71,197 @@ const renderRow = async (item: ResultListType) => {
 const ResultListPage = async ({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Promise<{ [key: string]: string | undefined }>;
 }) => {
-  const { page, ...queryParams } = searchParams;
+  const resolvedSearchParams = await searchParams;
+  const { page, tab, ...queryParams } = resolvedSearchParams;
   const p = page ? parseInt(page) : 1;
+  const activeTab = tab || "exams";
 
   const { userId, sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  const whereClause = {
-    AND: [
-      {
+  // Base role-based filter
+  const baseRoleFilter =
+    role === "admin"
+      ? {}
+      : {
+          OR: [
+            // Teacher - can see results for their class students
+            {
+              student: {
+                class: {
+                  teacher: {
+                    id: userId as string,
+                  },
+                },
+              },
+            },
+            // Student - can see their own results
+            {
+              student: {
+                id: userId as string,
+              },
+            },
+            // Parent - can see their children's results
+            {
+              student: {
+                parent: {
+                  id: userId as string,
+                },
+              },
+            },
+          ],
+        };
+
+  // Search conditions for exams
+  const examSearchCondition = queryParams.search
+    ? {
         OR: [
-          // Teacher
           {
             student: {
-              class: {
-                teacher: { id: userId! },
+              name: {
+                contains: queryParams.search,
+                mode: Prisma.QueryMode.insensitive,
               },
             },
           },
-          // Student
           {
-            student: { id: userId! },
-          },
-          // Parent
-          {
-            student: { parent: { id: userId! } },
+            exam: {
+              name: {
+                contains: queryParams.search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
           },
         ],
-      },
-      ...(queryParams.search
-        ? [
-            {
-              OR: [
-                {
-                  exam: {
-                    title: {
-                      contains: queryParams.search,
-                      mode: Prisma.QueryMode.insensitive,
-                    },
-                  },
-                },
-                {
-                  assignment: {
-                    title: {
-                      contains: queryParams.search,
-                      mode: Prisma.QueryMode.insensitive,
-                    },
-                  },
-                },
-                {
-                  student: {
-                    name: {
-                      contains: queryParams.search,
-                      mode: Prisma.QueryMode.insensitive,
-                    },
-                  },
-                },
-              ],
+      }
+    : {};
+
+  // Search conditions for assignments
+  const assignmentSearchCondition = queryParams.search
+    ? {
+        OR: [
+          {
+            student: {
+              name: {
+                contains: queryParams.search,
+                mode: Prisma.QueryMode.insensitive,
+              },
             },
-          ]
-        : []),
-    ],
+          },
+          {
+            assignment: {
+              name: {
+                contains: queryParams.search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          },
+        ],
+      }
+    : {};
+
+  // Build where clauses for each type
+  const examWhereClause = {
+    exam: { isNot: null }, // Only results with exams
+    ...(Object.keys(baseRoleFilter).length > 0 && baseRoleFilter),
+    ...(Object.keys(examSearchCondition).length > 0 &&
+      activeTab === "exams" &&
+      examSearchCondition),
   };
 
-  const [resultsResponse, count] = await prisma.$transaction([
+  const assignmentWhereClause = {
+    assignment: { isNot: null }, // Only results with assignments
+    ...(Object.keys(baseRoleFilter).length > 0 && baseRoleFilter),
+    ...(Object.keys(assignmentSearchCondition).length > 0 &&
+      activeTab === "assignments" &&
+      assignmentSearchCondition),
+  };
+
+  // Base counts without search filters for tabs
+  const examCountWhereClause = {
+    exam: { isNot: null },
+    ...(Object.keys(baseRoleFilter).length > 0 && baseRoleFilter),
+  };
+
+  const assignmentCountWhereClause = {
+    assignment: { isNot: null },
+    ...(Object.keys(baseRoleFilter).length > 0 && baseRoleFilter),
+  };
+
+  // Determine which data to fetch based on active tab
+  const isExamTab = activeTab === "exams";
+  const whereClause = isExamTab ? examWhereClause : assignmentWhereClause;
+
+  const [results, examCount, assignmentCount] = await prisma.$transaction([
     prisma.result.findMany({
       where: whereClause,
       include: {
-        student: {
-          include: {
-            class: {
-              include: {
-                teacher: true,
-              },
-            },
-          },
-        },
-        exam: {
-          include: {
-            subject: {
-              include: { class: true },
-            },
-          },
-        },
-        assignment: {
-          include: {
-            subject: {
-              include: { class: true },
-            },
-          },
-        },
+        student: true,
+        exam: true,
+        assignment: true,
       },
+      orderBy: resultSortOrder(queryParams.sort),
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
+    // Count exam results
     prisma.result.count({
-      where: whereClause,
+      where: examCountWhereClause,
+    }),
+    // Count assignment results
+    prisma.result.count({
+      where: assignmentCountWhereClause,
     }),
   ]);
 
-  const results = resultsResponse.map((item) => {
-    return {
-      id: item.id,
-      score: item.score,
-      title: item.exam.title || item.assignment.title,
-      studentName: item.student.name,
-      className:
-        item.exam.subject.class?.name ||
-        item.assignment.subject.class?.name ||
-        "",
-      teacherName: item.student.class?.teacher?.name || "",
-      startTime: item.exam.startTime || item.assignment?.dueDate,
-    };
-  });
+  // Process results with proper type mapping
+  const processedResults: ResultListType[] = results.map((item) => ({
+    ...item,
+    type: item.exam ? "exam" : "assignment",
+  })) as ResultListType[];
+
+  const currentCount = isExamTab ? examCount : assignmentCount;
 
   return (
-    <>
-      <TableCard<ResultListType>
-        renderRow={renderRow}
-        data={results}
-        columns={resultColumns}
-        page={p}
-        count={count}
-        title="All Results"
-        table="result"
-        queryParams={queryParams}
-        role={role}
+    <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
+      <ResultTabs
+        examCount={examCount}
+        assignmentCount={assignmentCount}
+        defaultValue="exams"
+        examContent={
+          activeTab === "exams" ? (
+            <TableCard<ResultListType>
+              renderRow={renderRow}
+              data={processedResults}
+              columns={examResultColumns}
+              page={p}
+              count={currentCount}
+              title="Exam Results"
+              table="result"
+              queryParams={{ ...queryParams, tab: "exams" }}
+              role={role}
+            />
+          ) : null
+        }
+        assignmentContent={
+          activeTab === "assignments" ? (
+            <TableCard<ResultListType>
+              renderRow={renderRow}
+              data={processedResults}
+              columns={assignmentResultColumns}
+              page={p}
+              count={currentCount}
+              title="Assignment Results"
+              table="result"
+              queryParams={{ ...queryParams, tab: "assignments" }}
+              role={role}
+            />
+          ) : null
+        }
       />
-    </>
+    </div>
   );
 };
 

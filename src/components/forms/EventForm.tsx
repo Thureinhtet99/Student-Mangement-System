@@ -3,11 +3,11 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { eventFormSchema } from "@/lib/formSchema";
-import { Button } from "@/components/ui/button";
+import { eventFormSchema } from "@/libs/formSchema";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -23,6 +23,11 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { useMutation } from "@tanstack/react-query";
+import { createEvent, updateEvent } from "@/libs/actions";
+import { toast } from "sonner";
+import { formatDateTimeLocal } from "@/libs/dataTimeFormat";
+import FormActionButton from "../FormActionButton";
 
 // Schema type
 type Inputs = z.infer<typeof eventFormSchema>;
@@ -30,27 +35,59 @@ type Inputs = z.infer<typeof eventFormSchema>;
 const EventForm = ({
   type,
   data,
-  classes = [],
+  onClose,
+  relatedData,
 }: {
   type: "create" | "update";
   data?: any;
-  classes?: { id: number; name: string }[];
+  onClose?: () => void;
+  relatedData?: any;
 }) => {
-  // useForm
+  const classes = relatedData?.classes || [];
+
   const form = useForm<Inputs>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
-      title: data?.title,
+      name: data?.name || "",
       description: data?.description || "",
-      startTime: data?.startTime || null,
-      endTime: data?.endTime || null,
-      classId: data?.classId || null,
+      startTime: data?.startTime ? new Date(data.startTime) : undefined,
+      endTime: data?.endTime ? new Date(data.endTime) : undefined,
+      classId: data?.classId || undefined,
     },
   });
 
-  // onSubmit
+  const {
+    isPending,
+    isError,
+    error,
+    mutate,
+    reset: resetMutation,
+  } = useMutation({
+    mutationFn: async (values: Inputs) => {
+      if (type === "create") {
+        return await createEvent(values);
+      } else {
+        return await updateEvent(values);
+      }
+    },
+    onSuccess: () => {
+      toast.success(
+        `Event is ${type === "create" ? "created" : "updated"} successfully`
+      );
+      form.reset();
+      onClose?.();
+    },
+    onError: () => {
+      toast.error(`Failed to ${type === "create" ? "create" : "update"} event`);
+    },
+  });
+
   const onSubmit = (values: Inputs) => {
-    console.log(values);
+    const formData = {
+      ...(type === "update" && data?.id && { id: data.id }),
+      ...values,
+    };
+    mutate(formData);
   };
 
   return (
@@ -58,14 +95,21 @@ const EventForm = ({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {isError && (
+              <div className="bg-destructive/15 p-3 rounded-md">
+                <p className="text-xs font-medium text-destructive">
+                  {error?.message || "Something went wrong. Please try again."}
+                </p>
+              </div>
+            )}
             <FormField
               control={form.control}
-              name="title"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter event title" {...field} />
+                    <Input placeholder="Enter event name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -83,12 +127,13 @@ const EventForm = ({
                       <Input
                         type="datetime-local"
                         onChange={(e) => {
-                          const date = new Date(e.target.value);
-                          field.onChange(date);
+                          const value = e.target.value;
+                          field.onChange(value ? new Date(value) : undefined);
                         }}
                         value={
-                          field.value instanceof Date
-                            ? field.value.toISOString().split("T")[0]
+                          field.value instanceof Date &&
+                          !isNaN(field.value.getTime())
+                            ? formatDateTimeLocal(field.value)
                             : ""
                         }
                       />
@@ -107,12 +152,13 @@ const EventForm = ({
                       <Input
                         type="datetime-local"
                         onChange={(e) => {
-                          const date = new Date(e.target.value);
-                          field.onChange(date);
+                          const value = e.target.value;
+                          field.onChange(value ? new Date(value) : undefined);
                         }}
                         value={
-                          field.value instanceof Date
-                            ? field.value.toISOString().split("T")[0]
+                          field.value instanceof Date &&
+                          !isNaN(field.value.getTime())
+                            ? formatDateTimeLocal(field.value)
                             : ""
                         }
                       />
@@ -122,6 +168,40 @@ const EventForm = ({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="classId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Class</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value ? String(field.value) : ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select class" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {classes?.length === 0 ? (
+                        <SelectItem value="empty" disabled>
+                          No classes found
+                        </SelectItem>
+                      ) : (
+                        classes?.map((c: any) => (
+                          <SelectItem key={c.id} value={String(c.id)}>
+                            {c.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -136,57 +216,20 @@ const EventForm = ({
                       {...field}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Provide a brief description of the event (optional)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="classId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Class</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select class" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {classes.map((classItem) => (
-                        <SelectItem key={classItem.id} value={classItem.name}>
-                          {classItem.name}
-                        </SelectItem>
-                      ))}
-                      {classes.length === 0 && (
-                        <SelectItem value="no-classes" disabled>
-                          No classes available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <FormActionButton
+              form={form}
+              resetMutation={resetMutation}
+              isPending={isPending}
+              type={type}
             />
-
-            <div className="flex justify-end gap-x-2">
-              <Button
-                variant="destructive"
-                type="reset"
-                className="w-full md:w-auto"
-                onClick={() => form.reset()}
-              >
-                Reset
-              </Button>
-              <Button type="submit" className="w-full md:w-auto">
-                {type === "create" ? "Create" : "Update"}
-              </Button>
-            </div>
           </form>
         </Form>
       </CardContent>

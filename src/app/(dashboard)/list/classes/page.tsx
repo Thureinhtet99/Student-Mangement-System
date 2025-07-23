@@ -3,13 +3,16 @@ import FormContainer from "@/components/FormContainer";
 import { TableCell, TableRow } from "@/components/ui/table";
 import TableCard from "@/components/TableCard";
 import { ClassListType } from "@/types";
-import { Button } from "@/components/ui/button";
-import prisma from "@/lib/prisma";
-import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Badge } from "@/components/ui/badge";
+import prisma from "@/libs/prisma";
+import { ITEM_PER_PAGE } from "@/libs/settings";
 import React from "react";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
+import { getSortOrder } from "@/libs/utils";
+import PeopleList from "@/components/PeopleList";
+import { ROUTE_CONFIG } from "@/configs/appConfig";
+import Link from "next/link";
+import BadgeList from "@/components/BadgeList";
 
 const renderRow = async (item: ClassListType) => {
   const { sessionClaims } = await auth();
@@ -17,78 +20,31 @@ const renderRow = async (item: ClassListType) => {
 
   return (
     <TableRow key={item.id}>
-      <TableCell>{item.name}</TableCell>
-      <TableCell className="hidden md:table-cell">
-        {item.capacity || "-"}
+      <TableCell className="w-2/12 min-w-2/12 max-w-3/12 ">
+        {item.name}
       </TableCell>
-      <TableCell>{item.teacher?.name || "-"}</TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {item.subjects.length > 0 ? (
-          item.subjects.length > 2 ? (
-            <>
-              {item.subjects.slice(0, 2).map((subject) => (
-                <React.Fragment key={subject.id}>
-                  <Badge
-                    variant="secondary"
-                    className="ml-1 mb-1 hover:bg-slate-200 cursor-pointer"
-                  >
-                    {subject.name}
-                  </Badge>
-                </React.Fragment>
-              ))}
-              <Badge
-                variant="secondary"
-                className="ml-1 mb-1 hover:bg-slate-200 cursor-pointer"
-              >
-                +{item.subjects.length - 2} more
-              </Badge>
-            </>
-          ) : (
-            <>
-              {item.subjects.map((subject) => (
-                <React.Fragment key={subject.id}>
-                  <Badge
-                    variant="secondary"
-                    className="ml-2 mb-1 hover:bg-slate-200 cursor-pointer"
-                  >
-                    {subject.name}
-                  </Badge>
-                </React.Fragment>
-              ))}
-            </>
-          )
-        ) : (
-          <span className="text-gray-500 text-xs">No subjects yet</span>
-        )}
+      <TableCell className="hidden md:table-cell w-1/12 min-w-1/12 max-w-1/12 ">
+        {item?.capacity || 0}
       </TableCell>
-      <TableCell className="hidden md:table-cell text-xs">
-        {item.students.length > 0 ? (
-          item.students.length > 3 ? (
-            <>
-              {item.students
-                .slice(0, 3)
-                .map((student) => student.name)
-                .join(", ")}
-              <Badge
-                variant="secondary"
-                className="ml-2 mb-1 hover:bg-slate-200 cursor-pointer"
-              >
-                +{item.students.length - 3} more
-              </Badge>
-            </>
-          ) : (
-            item.students.map((student, index) => (
-              <React.Fragment key={student.id}>
-                {student.name}
-                {index < item.students.length - 1 ? ", " : ""}
-              </React.Fragment>
-            ))
-          )
-        ) : (
-          <span className="text-gray-500">No students yet</span>
-        )}
+      <TableCell className=" w-2/12 min-w-2/12 max-w-2/12">
+        <Link
+          href={`${ROUTE_CONFIG.TEACHER_LIST}/${item.id}`}
+          className="hover:text-blue-800 hover:underline"
+        >
+          {item?.teacher?.name || "-"}
+        </Link>
       </TableCell>
-      <TableCell>
+      <TableCell className="hidden lg:table-cell  w-3/12 min-w-3/12 max-w-3/12">
+        <BadgeList table={item?.subjects} text="subject" />
+      </TableCell>
+      <TableCell className="hidden md:table-cell w-3/12 min-w-3/12 max-w-/12 text-xs ">
+        <PeopleList
+          table={item?.students}
+          text="student"
+          route={ROUTE_CONFIG.STUDENT_LIST}
+        />
+      </TableCell>
+      <TableCell className=" w-1/12 min-w-1/12 max-w-1/12">
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
@@ -105,9 +61,10 @@ const renderRow = async (item: ClassListType) => {
 const ClassListPage = async ({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Promise<{ [key: string]: string | undefined }>;
 }) => {
-  const { page, ...queryParams } = searchParams;
+  const resolvedSearchParams = await searchParams;
+  const { page, ...queryParams } = resolvedSearchParams;
   const p = page ? parseInt(page) : 1;
 
   const { userId, sessionClaims } = await auth();
@@ -122,12 +79,21 @@ const ClassListPage = async ({
               mode: Prisma.QueryMode.insensitive,
             },
           },
-
           {
             teacher: {
               name: {
                 contains: queryParams.search,
                 mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          },
+          {
+            subjects: {
+              some: {
+                name: {
+                  contains: queryParams.search,
+                  mode: Prisma.QueryMode.insensitive,
+                },
               },
             },
           },
@@ -160,8 +126,8 @@ const ClassListPage = async ({
         students: true,
         events: true,
         announcements: true,
-        attendances: true,
       },
+      orderBy: getSortOrder(queryParams.sort),
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),

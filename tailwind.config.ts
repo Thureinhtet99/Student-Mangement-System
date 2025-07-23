@@ -15,10 +15,9 @@ const config: Config = {
           "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
       },
       colors: {
-        firstColor: "#48cae4",
-        secondColor: "#90e0ef",
-        thirdColor: "#ade8f4",
-        fourthColor: "#caf0f8",
+        firstColor: "#025699",
+        secondColor: "#219dd7",
+        thirdColor: "#f69220",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {

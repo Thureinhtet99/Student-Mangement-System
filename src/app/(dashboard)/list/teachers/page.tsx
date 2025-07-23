@@ -5,14 +5,16 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import TableCard from "@/components/TableCard";
 import { teacherColumns } from "@/data/columns";
-import prisma from "@/lib/prisma";
-import { ITEM_PER_PAGE } from "@/lib/settings";
+import prisma from "@/libs/prisma";
+import { ITEM_PER_PAGE } from "@/libs/settings";
 import React from "react";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
+import { ROUTE_CONFIG } from "@/configs/appConfig";
+import TableCard from "@/components/TableCard";
+import { getSortOrder } from "@/libs/utils";
+import BadgeList from "@/components/BadgeList";
 
 const renderRow = async (item: TeacherListType) => {
   const { sessionClaims } = await auth();
@@ -20,7 +22,7 @@ const renderRow = async (item: TeacherListType) => {
 
   return (
     <TableRow key={item.id}>
-      <TableCell className="py-0">
+      <TableCell className="py-0 w-3/12 min-w-3/12 max-w-3/12">
         <div className="flex items-center gap-x-3">
           <Avatar>
             <AvatarImage
@@ -28,7 +30,9 @@ const renderRow = async (item: TeacherListType) => {
               alt={item.name}
               className="object-cover"
             />
-            <AvatarFallback className="capitalize">{item.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="capitalize">
+              {item.name.charAt(0)}
+            </AvatarFallback>
           </Avatar>
           <div>
             <p>{item.name}</p>
@@ -38,70 +42,27 @@ const renderRow = async (item: TeacherListType) => {
           </div>
         </div>
       </TableCell>
-      <TableCell>
-        <TableCell>
-          {item.id.length > 8
-            ? `${item.id.substring(0, 8)}${"*".repeat(5)}`
-            : item.id}
-        </TableCell>
+      <TableCell className=" w-1/12 min-w-1/12 max-w-1/12">
+        {item.id.length > 6
+          ? `${item.id.substring(0, 6)}${"*".repeat(4)}`
+          : item.id}
       </TableCell>
-      <TableCell className="hidden md:table-cell">
-        {item.subjects.length > 3 ? (
-          <>
-            {item.subjects.slice(0, 3).map((subject) => (
-              <React.Fragment key={subject.id}>
-                <Badge
-                  variant="secondary"
-                  className="ml-1 mb-1 capitalize hover:bg-slate-200 cursor-pointer"
-                >
-                  {subject.name}
-                </Badge>
-              </React.Fragment>
-            ))}
-            <Badge
-              variant="secondary"
-              className="ml-1 mb-1 capitalize hover:bg-slate-200 cursor-pointer"
-            >
-              +{item.subjects.length - 3} more
-            </Badge>
-          </>
-        ) : (
-          <>
-            {item.subjects.map((subject) => (
-              <React.Fragment key={subject.id}>
-                <Badge
-                  variant="secondary"
-                  className="hover:bg-slate-200 cursor-pointer ml-1 mb-1 capitalize"
-                >
-                  {subject.name}
-                </Badge>
-              </React.Fragment>
-            ))}
-          </>
-        )}
+      <TableCell className="hidden md:table-cell w-3/12 min-w-3/12 max-w-3/12">
+        <BadgeList table={item?.subjects ? item?.subjects : []} />
       </TableCell>
-      <TableCell className="hidden md:table-cell">
-        {item.classes.length > 0 ? (
-          item.classes.map((cls) => (
-            <Badge
-              key={cls.id}
-              variant="secondary"
-              className="ml-1 mb-1 capitalize"
-            >
-              {cls.name}
-            </Badge>
-          ))
-        ) : (
-          <span className="text-xs text-muted-foreground">-</span>
-        )}
+      <TableCell className="hidden md:table-cell w-2/12 min-w-2/12 max-w-2/12">
+        <BadgeList table={item?.classes ? item?.classes : []} />
       </TableCell>
-      <TableCell className="hidden lg:table-cell">
+      <TableCell className="hidden lg:table-cell w-2/12 min-w-2/12 max-w-2/12">
         {item?.phone || "-"}
       </TableCell>
-      <TableCell>
+      <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
         <div className="flex justify-end items-center md:gap-2">
           <Button variant="ghost" size="icon" asChild>
-            <Link href={`/list/teachers/${item.id}`} aria-label="View details">
+            <Link
+              href={`${ROUTE_CONFIG.TEACHER_LIST}/${item.id}`}
+              aria-label="View details"
+            >
               <Eye className="h-4 w-4" />
             </Link>
           </Button>
@@ -120,57 +81,72 @@ const renderRow = async (item: TeacherListType) => {
 const TeacherListPage = async ({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Promise<{ [key: string]: string | undefined }>;
 }) => {
-  const { page, ...queryParams } = searchParams;
+  const resolvedSearchParams = await searchParams;
+  const { page, ...queryParams } = resolvedSearchParams;
   const p = page ? parseInt(page) : 1;
 
-  const { sessionClaims } = await auth();
+  const { userId, sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  const whereClause = {
-    ...(queryParams.search && {
-      OR: [
-        {
-          name: {
-            contains: queryParams.search,
-            mode: Prisma.QueryMode.insensitive,
+  const searchCondition = queryParams.search
+    ? {
+        OR: [
+          {
+            name: {
+              contains: queryParams.search,
+              mode: Prisma.QueryMode.insensitive,
+            },
           },
-        },
-        {
-          id: {
-            contains: queryParams.search,
-            mode: Prisma.QueryMode.insensitive,
+          {
+            id: {
+              contains: queryParams.search,
+              mode: Prisma.QueryMode.insensitive,
+            },
           },
-        },
-        {
-          subjects: {
-            some: {
-              name: {
-                contains: queryParams.search,
-                mode: Prisma.QueryMode.insensitive,
+          {
+            subjects: {
+              some: {
+                name: {
+                  contains: queryParams.search,
+                  mode: Prisma.QueryMode.insensitive,
+                },
               },
             },
           },
-        },
-        {
-          classes: {
-            some: {
-              name: {
-                contains: queryParams.search,
-                mode: Prisma.QueryMode.insensitive,
+          {
+            classes: {
+              some: {
+                name: {
+                  contains: queryParams.search,
+                  mode: Prisma.QueryMode.insensitive,
+                },
               },
             },
           },
-        },
-      ],
-    }),
-  };
+        ],
+      }
+    : {};
+
+  const whereClause =
+    role === "admin"
+      ? searchCondition
+      : {
+          AND: [
+            {
+              // Teacher
+              id: userId as string,
+            },
+            searchCondition,
+          ].filter((condition) => Object.keys(condition).length > 0), // Remove empty conditions
+        };
 
   const [teachers, count] = await prisma.$transaction([
     prisma.teacher.findMany({
       where: whereClause,
       include: { subjects: true, classes: true },
+      orderBy: getSortOrder(queryParams.sort),
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),

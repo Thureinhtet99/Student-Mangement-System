@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon } from "lucide-react";
-import { dateFormat } from "@/lib/dataTimeFormat";
+import { dateFormat } from "@/libs/dataTimeFormat";
 
 type EventType = {
   type: string;
@@ -14,7 +14,7 @@ type EventType = {
 
 const Event = ({ type, title, description, date }: EventType) => {
   return (
-    <Card className="border-0 shadow-none">
+    <Card className="border-0 p-1 shadow-none">
       <CardHeader className="px-0 pt-0 pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold text-gray-700">

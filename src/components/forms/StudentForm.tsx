@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { studentFormSchema } from "@/lib/formSchema";
+import { studentFormSchema } from "@/libs/formSchema";
 import { useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -24,7 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "../ui/label";
 import { useMutation } from "@tanstack/react-query";
-import { createStudent, updateStudent } from "@/lib/actions";
+import { createStudent, updateStudent } from "@/libs/actions";
 import {
   Select,
   SelectContent,
@@ -32,6 +32,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CLOUDINARY_CONFIG } from "@/configs/appConfig";
+import FormActionButton from "../FormActionButton";
 
 // Schema type
 type Inputs = z.infer<typeof studentFormSchema>;
@@ -48,8 +50,12 @@ const StudentForm = ({
   relatedData?: any;
 }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [shouldRemovePhoto, setShouldRemovePhoto] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const classes = relatedData?.classes || [];
+  const parents = relatedData?.parents || [];
 
   const form = useForm<Inputs>({
     resolver: zodResolver(studentFormSchema),
@@ -60,10 +66,11 @@ const StudentForm = ({
       name: data?.name || "",
       phone: data?.phone || "",
       address: data?.address || "",
-      gender: data?.gender || "MALE",
+      gender: data?.gender || "",
       birthday: data?.birthday ? new Date(data.birthday) : undefined,
       image: data?.image || "",
-      classId: data?.classId || null,
+      classId: data?.classId || undefined,
+      parentId: data?.parentId || undefined,
     },
   });
 
@@ -87,13 +94,13 @@ const StudentForm = ({
         `Student ${type === "create" ? "created" : "updated"} successfully`
       );
       form.reset();
+      setShouldRemovePhoto(false);
+      setPreviewUrl(null);
       onClose?.();
     },
-    onError: (error) => {
+    onError: () => {
       toast.error(
-        `Failed to ${type === "create" ? "create" : "update"} student: ${
-          error.message
-        }`
+        `Failed to ${type === "create" ? "create" : "update"} student`
       );
     },
   });
@@ -103,8 +110,22 @@ const StudentForm = ({
     const formData = {
       ...(type === "update" && data?.id && { id: data.id }),
       ...values,
+      ...(shouldRemovePhoto && { removePhoto: true }),
     };
     mutate(formData);
+  };
+
+  // Helper function to get display image
+  const getDisplayImage = () => {
+    if (shouldRemovePhoto) return null;
+    if (previewUrl) return previewUrl;
+    if (data?.image && type === "update") return data.image;
+    return null;
+  };
+
+  // Helper function to check if there's a database image
+  const hasDbImage = () => {
+    return type === "update" && data?.image;
   };
 
   return (
@@ -118,16 +139,14 @@ const StudentForm = ({
             {isError && (
               <div className="bg-destructive/15 p-3 rounded-md">
                 <p className="text-sm font-medium text-destructive">
-                  {error?.message || "Something went wrong. Please try again."}
+                  {error?.message || "Something went wrong. Please try again"}
                 </p>
               </div>
             )}
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium mb-6">
-                  Account Information
-                </h3>
+                <h3 className="text-lg font-medium mb-6">Account Info:</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <FormField
                     control={form.control}
@@ -171,7 +190,7 @@ const StudentForm = ({
                           <div className="relative">
                             <Input
                               type={isPasswordVisible ? "text" : "password"}
-                              placeholder="••••••••"
+                              placeholder="********"
                               {...field}
                             />
                             <Button
@@ -201,9 +220,7 @@ const StudentForm = ({
               <Separator />
 
               <div>
-                <h3 className="text-lg font-medium mb-6">
-                  Personal Information
-                </h3>
+                <h3 className="text-lg font-medium mb-6">Personal Info:</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-8">
                     <FormField
@@ -215,6 +232,40 @@ const StudentForm = ({
                           <FormControl>
                             <Input placeholder="Enter name" {...field} />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="classId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Class</FormLabel>
+                          <Select
+                            value={field.value ? String(field.value) : ""}
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select class" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {classes?.length === 0 ? (
+                                <SelectItem value="empty" disabled>
+                                  No classes found
+                                </SelectItem>
+                              ) : (
+                                classes?.map((c: any) => (
+                                  <SelectItem key={c.id} value={String(c.id)}>
+                                    {c.name}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -262,8 +313,9 @@ const StudentForm = ({
                           <FormLabel>Gender</FormLabel>
                           <FormControl>
                             <RadioGroup
+                              className="gap-1"
                               onValueChange={field.onChange}
-                              defaultValue={field.value}
+                              value={field.value}
                             >
                               <div className="flex items-center gap-2">
                                 <RadioGroupItem value="MALE" id="male" />
@@ -275,6 +327,40 @@ const StudentForm = ({
                               </div>
                             </RadioGroup>
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="parentId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Parent</FormLabel>
+                          <Select
+                            value={field.value ? String(field.value) : ""}
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select parent" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {parents?.length === 0 ? (
+                                <SelectItem value="empty" disabled>
+                                  No parents found
+                                </SelectItem>
+                              ) : (
+                                parents?.map((c: any) => (
+                                  <SelectItem key={c.id} value={String(c.id)}>
+                                    {c.name}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -299,47 +385,10 @@ const StudentForm = ({
                                 field.value instanceof Date &&
                                 !isNaN(field.value.getTime())
                                   ? field.value.toISOString().split("T")[0]
-                                  : undefined
+                                  : ""
                               }
                             />
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="classId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Class</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            // defaultValue={field.value?.toString()}
-                            value={
-                              field.value ? String(field.value) : undefined
-                            }
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select class" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {classes?.length === 0 ? (
-                                <SelectItem value="empty" disabled>
-                                  No classes found
-                                </SelectItem>
-                              ) : (
-                                classes?.map((c: any) => (
-                                  <SelectItem key={c.id} value={String(c.id)}>
-                                    {c.name}
-                                  </SelectItem>
-                                ))
-                              )}
-                            </SelectContent>
-                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -351,7 +400,9 @@ const StudentForm = ({
               <Separator />
 
               <div>
-                <h3 className="text-lg font-medium mb-6">Profile Picture</h3>
+                <h3 className="text-lg font-medium mb-6">
+                  Profile Picture (Optional)
+                </h3>
                 <FormField
                   control={form.control}
                   name="image"
@@ -360,17 +411,27 @@ const StudentForm = ({
                       <FormControl>
                         <div className="flex flex-col sm:flex-row items-center gap-6">
                           <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-primary/20 bg-muted flex items-center justify-center">
-                            {field.value ? (
+                            {isImageLoading && (
+                              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10 animate-in fade-in duration-300">
+                                <LoaderCircle className="animate-spin h-6 w-6" />
+                              </div>
+                            )}
+                            {getDisplayImage() ? (
                               <Image
-                                src={field.value}
+                                src={getDisplayImage()!}
                                 alt="Profile"
                                 fill
-                                className="object-cover"
+                                className="object-cover transition-all duration-300"
                                 sizes="128px"
+                                onLoadStart={() => setIsImageLoading(true)}
+                                onLoad={() => setIsImageLoading(false)}
+                                onError={() => setIsImageLoading(false)}
                               />
                             ) : (
                               <span className="text-muted-foreground text-xs text-center px-2">
-                                No image selected
+                                {shouldRemovePhoto
+                                  ? "Photo will be removed"
+                                  : "No image selected"}
                               </span>
                             )}
                           </div>
@@ -386,69 +447,140 @@ const StudentForm = ({
                                   const file = e.target.files?.[0];
                                   if (!file) return;
 
-                                  if (file.size > 2000000) {
-                                    toast.error(
-                                      "File size must be less than 2MB"
-                                    );
-                                    return;
-                                  }
+                                  setIsImageLoading(true);
 
                                   try {
-                                    // This is a placeholder for actual image upload logic
-                                    // In a real app, you would upload to your server or cloud storage
-                                    toast.loading("Uploading image...");
-
-                                    // Simulate upload delay
-                                    setTimeout(() => {
-                                      // Create a temporary URL for preview
-                                      const imageUrl =
-                                        URL.createObjectURL(file);
-                                      field.onChange(imageUrl);
-                                      toast.dismiss();
-                                      toast.success(
-                                        "Image uploaded successfully"
+                                    // Validate file size
+                                    if (
+                                      file.size >
+                                      CLOUDINARY_CONFIG.MAX_FILE_SIZE
+                                    ) {
+                                      toast.error(
+                                        "File size must be less than 2MB"
                                       );
-                                    }, 1500);
-                                  } catch (error) {
-                                    toast.dismiss();
-                                    toast.error(
-                                      `Upload failed: ${
-                                        error instanceof Error
-                                          ? error.message
-                                          : "Unknown error"
-                                      }`
+                                      return;
+                                    }
+
+                                    // Validate file type
+                                    const fileType = file.type.split("/")[1];
+                                    if (
+                                      !CLOUDINARY_CONFIG.ALLOWED_FORMATS.includes(
+                                        fileType
+                                      )
+                                    ) {
+                                      toast.error(
+                                        "Only JPG, PNG, and WebP files are allowed"
+                                      );
+                                      return;
+                                    }
+
+                                    // Create preview URL
+                                    const url = URL.createObjectURL(file);
+                                    setPreviewUrl(url);
+
+                                    // Update form field
+                                    field.onChange(file);
+                                    setShouldRemovePhoto(false);
+
+                                    toast.success(
+                                      "Image selected successfully"
                                     );
+                                  } catch (error) {
+                                    toast.error("Failed to process image");
+                                  } finally {
+                                    setIsImageLoading(false);
                                   }
                                 }}
                               />
                               <Button
                                 type="button"
                                 variant="secondary"
-                                className="flex items-center justify-center gap-2"
+                                className="flex items-center justify-center gap-2 hover:scale-105 transition-all duration-200"
                                 onClick={() =>
                                   document
                                     .getElementById("imageUpload")
                                     ?.click()
                                 }
+                                disabled={isImageLoading}
                               >
-                                <ArrowUpFromLine className="h-4 w-4" />
-                                {field.value ? "Change photo" : "Upload photo"}
+                                {isImageLoading ? (
+                                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <ArrowUpFromLine className="h-4 w-4" />
+                                )}
+                                {getDisplayImage()
+                                  ? "Change photo"
+                                  : "Upload photo"}
                               </Button>
 
-                              {field.value && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => field.onChange("")}
-                                >
-                                  Remove photo
-                                </Button>
+                              {(getDisplayImage() || shouldRemovePhoto) && (
+                                <div className="flex gap-2">
+                                  {!shouldRemovePhoto ? (
+                                    <>
+                                      {/* Only show remove button if there's a database image OR a preview */}
+                                      {(hasDbImage() || previewUrl) && (
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            // Clean up preview URL
+                                            if (previewUrl) {
+                                              URL.revokeObjectURL(previewUrl);
+                                              setPreviewUrl(null);
+                                            }
+                                            field.onChange("");
+
+                                            // Only set shouldRemovePhoto if there's a database image
+                                            if (hasDbImage()) {
+                                              setShouldRemovePhoto(true);
+                                            }
+
+                                            setIsImageLoading(false);
+                                          }}
+                                          disabled={isImageLoading}
+                                        >
+                                          {hasDbImage()
+                                            ? "Remove photo"
+                                            : "Clear selection"}
+                                        </Button>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled
+                                      >
+                                        Photo marked for removal
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => {
+                                          setShouldRemovePhoto(false);
+                                          // Restore original image if in update mode
+                                          if (
+                                            type === "update" &&
+                                            data?.image
+                                          ) {
+                                            field.onChange(data.image);
+                                          }
+                                        }}
+                                      >
+                                        Undo
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
                               )}
                             </div>
                             <FormDescription>
-                              Upload a profile picture (JPG, PNG or WebP, max
-                              2MB)
+                              Upload a profile picture (optional - JPG, PNG or
+                              WebP, max 2MB)
                             </FormDescription>
                           </div>
                         </div>
@@ -460,36 +592,14 @@ const StudentForm = ({
               </div>
             </div>
 
-            <div className="flex justify-end gap-x-3 pt-4">
-              <Button
-                variant="outline"
-                type="button"
-                className="w-full sm:w-auto"
-                onClick={() => {
-                  form.reset();
-                  resetMutation();
-                }}
-                disabled={isPending}
-              >
-                Reset
-              </Button>
-              <Button
-                type="submit"
-                className="w-full sm:w-auto"
-                disabled={isPending}
-              >
-                {isPending ? (
-                  <>
-                    <LoaderCircle className="animate-spin h-4 w-4 mr-2" />
-                    {type === "create" ? "Creating..." : "Updating..."}
-                  </>
-                ) : type === "create" ? (
-                  "Create"
-                ) : (
-                  "Update"
-                )}
-              </Button>
-            </div>
+            <FormActionButton
+              form={form}
+              setIsImageLoading={setIsImageLoading}
+              resetMutation={resetMutation}
+              isPending={isPending}
+              isImageLoading={isImageLoading}
+              type={type}
+            />
           </form>
         </Form>
       </CardContent>

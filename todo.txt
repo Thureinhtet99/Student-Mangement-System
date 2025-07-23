@@ -1,0 +1,9 @@
+#Todo
+- capacity of class and count of student 5:35:40
+- create/update/delete admins, teachers, students and parents in Clerk too
+- check ResultForm for < undefined | null | "" >
+- delete RedirectToast component
+
+#Done
+- make separate component for TableCell > Badge
+- to delete photo only

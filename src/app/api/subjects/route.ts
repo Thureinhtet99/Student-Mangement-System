@@ -1,4 +1,4 @@
-import { getSubjects } from "@/lib/actions";
+import { getSubjects } from "@/libs/actions";
 import { NextResponse } from "next/server";
 
 // Get subjects

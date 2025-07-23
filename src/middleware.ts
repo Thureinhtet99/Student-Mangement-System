@@ -1,30 +1,35 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { routeAccessMap } from "./lib/settings";
+import { routeAccessMap } from "./libs/settings";
 import { NextResponse } from "next/server";
+import { ROUTE_CONFIG } from "./configs/appConfig";
 
-const isPublicRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
-const isProtectedRoute = createRouteMatcher(["/admin(.*)", "/teacher(.*)"]);
+const isPublicRoute = createRouteMatcher([
+  `${ROUTE_CONFIG.SIGNIN}(.*)`,
+  `${ROUTE_CONFIG.SIGNUP}(.*)`,
+]);
 
 const matchers = Object.keys(routeAccessMap).map((route) => ({
   matcher: createRouteMatcher([route]),
   allowedRoles: routeAccessMap[route],
 }));
 
-
 export default clerkMiddleware(async (auth, req) => {
+  // Allow public routes
+  if (isPublicRoute(req)) return;
+
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
+  // If no role is found, redirect to sign-in
+  if (!role) {
+    return NextResponse.redirect(new URL(ROUTE_CONFIG.SIGNIN, req.url));
+  }
+
   for (const { matcher, allowedRoles } of matchers) {
-    if (matcher(req) && !allowedRoles.includes(role!)) {
+    if (matcher(req) && !allowedRoles.includes(role)) {
       return NextResponse.redirect(new URL(`/${role}`, req.url));
     }
   }
-
-  // console.log("SC",sessionClaims);
-
-  // if (isPublicRoute(req)) return;
-  // if (isProtectedRoute(req)) await auth.protect();
 });
 
 export const config = {

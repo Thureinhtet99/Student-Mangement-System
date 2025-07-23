@@ -1,4 +1,4 @@
-import { getStudents } from "@/lib/actions";
+import { getStudents } from "@/libs/actions";
 import { NextResponse } from "next/server";
 
 // Get students

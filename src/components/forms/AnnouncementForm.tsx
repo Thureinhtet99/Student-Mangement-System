@@ -3,10 +3,11 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
+import { announcementFormSchema } from "@/libs/formSchema";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -21,8 +22,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { announcementFormSchema } from "@/lib/formSchema";
 import { Textarea } from "@/components/ui/textarea";
+import { useMutation } from "@tanstack/react-query";
+import { createAnnouncement, updateAnnouncement } from "@/libs/actions";
+import { toast } from "sonner";
+import { formatDateLocal } from "@/libs/dataTimeFormat";
+import FormActionButton from "../FormActionButton";
 
 // Schema type
 type Inputs = z.infer<typeof announcementFormSchema>;
@@ -30,26 +35,62 @@ type Inputs = z.infer<typeof announcementFormSchema>;
 const AnnouncementForm = ({
   type,
   data,
-  classes = [], // Add classes as a prop for dropdown options
+  onClose,
+  relatedData,
 }: {
   type: "create" | "update";
   data?: any;
-  classes?: { id: number; name: string }[];
+  onClose?: () => void;
+  relatedData?: any;
 }) => {
-  // useForm
+  const classes = relatedData?.classes || [];
+
   const form = useForm<Inputs>({
     resolver: zodResolver(announcementFormSchema),
     defaultValues: {
-      title: data?.title,
+      name: data?.name || "",
       description: data?.description || "",
-      date: data?.date || null,
-      classId: data?.classId || null,
+      date: data?.date ? new Date(data.date) : undefined,
+      classId: data?.classId || undefined,
     },
   });
 
-  // onSubmit
+  const {
+    isPending,
+    isError,
+    error,
+    mutate,
+    reset: resetMutation,
+  } = useMutation({
+    mutationFn: async (values: Inputs) => {
+      if (type === "create") {
+        return await createAnnouncement(values);
+      } else {
+        return await updateAnnouncement(values);
+      }
+    },
+    onSuccess: () => {
+      toast.success(
+        `Announcement is ${
+          type === "create" ? "created" : "updated"
+        } successfully`
+      );
+      form.reset();
+      onClose?.();
+    },
+    onError: () => {
+      toast.error(
+        `Failed to ${type === "create" ? "create" : "update"} announcement`
+      );
+    },
+  });
+
   const onSubmit = (values: Inputs) => {
-    console.log(values);
+    const formData = {
+      ...(type === "update" && data?.id && { id: data.id }),
+      ...values,
+    };
+    mutate(formData);
   };
 
   return (
@@ -57,19 +98,27 @@ const AnnouncementForm = ({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {isError && (
+              <div className="bg-destructive/15 p-3 rounded-md">
+                <p className="text-xs font-medium text-destructive">
+                  {error?.message || "Something went wrong. Please try again."}
+                </p>
+              </div>
+            )}
             <FormField
               control={form.control}
-              name="title"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter announcement title" {...field} />
+                    <Input placeholder="Enter announcement name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -81,12 +130,13 @@ const AnnouncementForm = ({
                       <Input
                         type="date"
                         onChange={(e) => {
-                          const date = new Date(e.target.value);
-                          field.onChange(date);
+                          const value = e.target.value;
+                          field.onChange(value ? new Date(value) : undefined);
                         }}
                         value={
-                          field.value instanceof Date
-                            ? field.value.toISOString().split("T")[0]
+                          field.value instanceof Date &&
+                          !isNaN(field.value.getTime())
+                            ? formatDateLocal(field.value)
                             : ""
                         }
                       />
@@ -96,6 +146,40 @@ const AnnouncementForm = ({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="classId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Class</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value ? String(field.value) : ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select class" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {classes?.length === 0 ? (
+                        <SelectItem value="empty" disabled>
+                          No classes found
+                        </SelectItem>
+                      ) : (
+                        classes?.map((c: any) => (
+                          <SelectItem key={c.id} value={String(c.id)}>
+                            {c.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -110,57 +194,20 @@ const AnnouncementForm = ({
                       {...field}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Provide a brief description of the announcement (optional)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="classId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Class</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select class" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {classes.map((classItem) => (
-                        <SelectItem key={classItem.id} value={classItem.name}>
-                          {classItem.name}
-                        </SelectItem>
-                      ))}
-                      {classes.length === 0 && (
-                        <SelectItem value="no-classes" disabled>
-                          No classes available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <FormActionButton
+              form={form}
+              resetMutation={resetMutation}
+              isPending={isPending}
+              type={type}
             />
-
-            <div className="flex justify-end gap-x-2">
-              <Button
-                variant="destructive"
-                type="reset"
-                className="w-full md:w-auto"
-                onClick={() => form.reset()}
-              >
-                Reset
-              </Button>
-              <Button type="submit" className="w-full md:w-auto">
-                {type === "create" ? "Create" : "Update"}
-              </Button>
-            </div>
           </form>
         </Form>
       </CardContent>

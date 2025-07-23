@@ -1,10 +1,7 @@
-"use client";
-
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { lessonFormSchema } from "@/lib/formSchema";
-import { Button } from "@/components/ui/button";
+import { lessonFormSchema } from "@/libs/formSchema";
 import {
   Form,
   FormControl,
@@ -14,14 +11,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import FormActionButton from "../FormActionButton";
+import { useMutation } from "@tanstack/react-query";
+import { createLesson, updateLesson } from "@/libs/actions";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
+} from "../ui/select";
 
 // Schema type
 type Inputs = z.infer<typeof lessonFormSchema>;
@@ -29,27 +30,60 @@ type Inputs = z.infer<typeof lessonFormSchema>;
 const LessonForm = ({
   type,
   data,
-}: // assignments: [],
-// attendances: [],
-{
+  relatedData,
+  onClose,
+}: {
   type: "create" | "update";
   data?: any;
-  // assignments: { id: number; title: string }[];
-  // attendances: { id: number; date: string }[];
+  relatedData?: any;
+  onClose?: () => void;
 }) => {
-  // useForm
+  const subjects = relatedData?.subjects || [];
+
   const form = useForm<Inputs>({
     resolver: zodResolver(lessonFormSchema),
     defaultValues: {
-      name: data?.name,
-      subjectId: data?.subjectId,
-      classId: data?.classId,
+      name: data?.name || "",
+      subjectId: data?.subjectId || undefined,
+    },
+  });
+
+  // Mutation
+  const {
+    isPending,
+    isError,
+    error,
+    mutate,
+    reset: resetMutation,
+  } = useMutation({
+    mutationFn: async (values: Inputs) => {
+      if (type === "create") {
+        return await createLesson(values);
+      } else {
+        return await updateLesson(values);
+      }
+    },
+    onSuccess: () => {
+      toast.success(
+        `Lesson ${type === "create" ? "created" : "updated"} successfully`
+      );
+      form.reset();
+      onClose?.();
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to ${type === "create" ? "create" : "update"} lesson`
+      );
     },
   });
 
   // onSubmit
   const onSubmit = (values: Inputs) => {
-    console.log(values);
+    const formData = {
+      ...(type === "update" && data?.id && { id: data.id }),
+      ...values,
+    };
+    mutate(formData);
   };
 
   return (
@@ -57,12 +91,19 @@ const LessonForm = ({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {isError && (
+              <div className="bg-destructive/15 p-3 rounded-md">
+                <p className="text-xs font-medium text-destructive">
+                  {error?.message || "Something went wrong. Please try again"}
+                </p>
+              </div>
+            )}
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter lesson name" {...field} />
                   </FormControl>
@@ -71,121 +112,46 @@ const LessonForm = ({
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="subjectId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subjects</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select subject" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {/* {lessons.map((lessonItem) => (
-                        <SelectItem key={lessonItem.id} value={lessonItem.name}>
-                          {lessonItem.name}
+            <FormField
+              control={form.control}
+              name="subjectId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Subject</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value ? String(field.value) : ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select subject" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {subjects?.length === 0 ? (
+                        <SelectItem value="empty" disabled>
+                          No subjects found
                         </SelectItem>
-                      ))}
-                      {lessons.length === 0 && (
-                        <SelectItem value="no-classes" disabled>
-                          No classes available
-                        </SelectItem>
-                      )} */}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      ) : (
+                        subjects?.map((s: any) => (
+                          <SelectItem key={s.id} value={String(s.id)}>
+                            {s.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="classId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Class</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select class" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {/* {lessons.map((lessonItem) => (
-                        <SelectItem key={lessonItem.id} value={lessonItem.name}>
-                          {lessonItem.name}
-                        </SelectItem>
-                      ))}
-                      {lessons.length === 0 && (
-                        <SelectItem value="no-classes" disabled>
-                          No classes available
-                        </SelectItem>
-                      )} */}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="teacherId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teacher</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select teacher" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {/* {lessons.map((lessonItem) => (
-                        <SelectItem key={lessonItem.id} value={lessonItem.name}>
-                          {lessonItem.name}
-                        </SelectItem>
-                      ))}
-                      {lessons.length === 0 && (
-                        <SelectItem value="no-classes" disabled>
-                          No classes available
-                        </SelectItem>
-                      )} */}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="flex justify-end gap-x-2">
-              <Button
-                variant="destructive"
-                type="reset"
-                className="w-full md:w-auto"
-                onClick={() => form.reset()}
-              >
-                Reset
-              </Button>
-              <Button type="submit" className="w-full md:w-auto">
-                {type === "create" ? "Create" : "Update"}
-              </Button>
-            </div>
+            <FormActionButton
+              form={form}
+              resetMutation={resetMutation}
+              isPending={isPending}
+              type={type}
+            />
           </form>
         </Form>
       </CardContent>

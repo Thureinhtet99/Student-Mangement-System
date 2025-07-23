@@ -9,9 +9,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ClerkProvider afterSignOutUrl={"sign-in"}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </ClerkProvider>
   );
 }

@@ -34,6 +34,11 @@ export const studentColumns = [
     accessor: "id",
   },
   {
+    header: "Gender",
+    accessor: "gender",
+    className: "hidden lg:table-cell",
+  },
+  {
     header: "Class",
     accessor: "class",
     className: "hidden md:table-cell",
@@ -57,9 +62,8 @@ export const studentColumns = [
 ];
 
 export const parentColumns = [
-  { header: "#", accessor: "index", className: "hidden md:table-cell" },
   { header: "Info", accessor: "info" },
-  { header: "ID", accessor: "id", className: "hidden md:table-cell" },
+  { header: "ID", accessor: "id", className: "hidden lg:table-cell" },
   {
     header: "Students",
     accessor: "students",
@@ -73,27 +77,6 @@ export const parentColumns = [
     header: "Address",
     accessor: "address",
     className: "hidden lg:table-cell",
-  },
-  {
-    header: "Actions",
-    accessor: "action",
-    className: "flex justify-end items-center",
-  },
-];
-
-export const subjectColumns = [
-  {
-    header: "Name",
-    accessor: "name",
-  },
-  {
-    header: "Teachers",
-    accessor: "teacher",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Lessons",
-    accessor: "lesson",
   },
   {
     header: "Actions",
@@ -130,19 +113,88 @@ export const classColumns = [
   },
 ];
 
-export const lessonColumns = [
-  { header: "#", accessor: "index", className: "hidden md:table-cell" },
-  { header: "Name", accessor: "name" },
-  { header: "Subject", accessor: "subject" },
+export const subjectColumns = [
   {
-    header: "Class",
-    accessor: "class",
+    header: "Name",
+    accessor: "name",
+  },
+  {
+    header: "Teachers",
+    accessor: "teacher",
     className: "hidden md:table-cell",
   },
   {
-    header: "Teacher",
-    accessor: "teacher",
+    header: "Classes",
+    accessor: "classes",
+    className: "hidden md:table-cell",
+  },
+  {
+    header: "Lessons",
+    accessor: "lesson",
+  },
+  {
+    header: "Description",
+    accessor: "description",
+    className: "hidden md:table-cell",
+  },
+  {
+    header: "Actions",
+    accessor: "action",
+    className: "flex justify-end items-center",
+  },
+];
+
+export const lessonColumns = [
+  { header: "Name", accessor: "name" },
+  { header: "Subject", accessor: "subject" },
+  // {
+  //   header: "Class",
+  //   accessor: "class",
+  //   className: "hidden md:table-cell",
+  // },
+  // {
+  //   header: "Teacher",
+  //   accessor: "teacher",
+  //   className: "hidden lg:table-cell",
+  // },
+  {
+    header: "Actions",
+    accessor: "action",
+    className: "flex justify-end items-center",
+  },
+];
+
+export const attendanceColumns = [
+  {
+    header: "Student name",
+    accessor: "name",
+  },
+  {
+    header: "Present",
+    accessor: "present",
+  },
+  {
+    header: "Date",
+    accessor: "date",
     className: "hidden lg:table-cell",
+  },
+  {
+    header: "Actions",
+    accessor: "action",
+    className: "flex justify-end items-center",
+  },
+];
+
+export const assignmentColumns = [
+  { header: "Name", accessor: "name" },
+  {
+    header: "Subject",
+    accessor: "subject",
+    className: "hidden md:table-cell",
+  },
+  {
+    header: "Due date",
+    accessor: "due-date",
   },
   {
     header: "Actions",
@@ -161,11 +213,11 @@ export const examColumns = [
   {
     header: "Class",
     accessor: "class",
-    className: "hidden md:table-cell",
+    className: "hidden lg:table-cell",
   },
   {
-    header: "Teacher",
-    accessor: "teacher",
+    header: "Description",
+    accessor: "description",
     className: "hidden lg:table-cell",
   },
   {
@@ -184,29 +236,31 @@ export const examColumns = [
   },
 ];
 
-export const assignmentColumns = [
-  { header: "#", accessor: "index", className: "hidden md:table-cell" },
-  { header: "Name", accessor: "name" },
-  {
-    header: "Subject",
-    accessor: "subject",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Due date",
-    accessor: "due-date",
-  },
-  {
-    header: "Class",
-    accessor: "class",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Teacher",
-    accessor: "teacher",
-    className: "hidden lg:table-cell",
-  },
+// export const resultColumns = [
+//   { header: "Student", accessor: "student" },
+//   { header: "Exam/Assignment name", accessor: "eaname" },
+//   { header: "Type", accessor: "type" },
+//   { header: "Score", accessor: "score" },
+//   { header: "Class", accessor: "className", className: "hidden md:table-cell" },
+//   { header: "Date", accessor: "startTime", className: "hidden md:table-cell" },
+//   {
+//     header: "Actions",
+//     accessor: "action",
+//     className: "flex justify-end items-center",
+//   },
+// ];
 
+// Update columns to remove type column since we're separating by tabs
+export const examResultColumns = [
+  { header: "Student", accessor: "student" },
+  { header: "Score", accessor: "score" },
+  { header: "Exam", accessor: "exam", className: "hidden md:table-cell" },
+  { header: "Comment", accessor: "comment", className: "hidden lg:table-cell" },
+  {
+    header: "Date",
+    accessor: "date",
+    className: "hidden md:table-cell",
+  },
   {
     header: "Actions",
     accessor: "action",
@@ -214,26 +268,11 @@ export const assignmentColumns = [
   },
 ];
 
-export const resultColumns = [
-  { header: "Title", accessor: "title" },
-  {
-    header: "Student",
-    accessor: "student",
-  },
-  {
-    header: "Score",
-    accessor: "score",
-  },
-  {
-    header: "Class",
-    accessor: "class",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Teacher",
-    accessor: "teacher",
-    className: "hidden lg:table-cell",
-  },
+export const assignmentResultColumns = [
+  { header: "Student", accessor: "student" },
+  { header: "Score", accessor: "score" },
+  { header: "Assignment", accessor: "assignment" },
+  { header: "Comment", accessor: "comment", className: "hidden lg:table-cell" },
   {
     header: "Date",
     accessor: "date",
@@ -247,18 +286,23 @@ export const resultColumns = [
 ];
 
 export const eventColumns = [
-  { header: "#", accessor: "index", className: "hidden md:table-cell" },
   {
-    header: "Title",
-    accessor: "title",
+    header: "Name",
+    accessor: "name",
   },
   {
     header: "Class",
     accessor: "class",
   },
   {
+    header: "Description",
+    accessor: "description",
+    className: "hidden md:table-cell",
+  },
+  {
     header: "Start Time",
     accessor: "start Time",
+    className: "hidden md:table-cell",
   },
   {
     header: "End time",
@@ -273,20 +317,20 @@ export const eventColumns = [
 ];
 
 export const announcementColumns = [
-  { header: "#", accessor: "index", className: "hidden md:table-cell" },
   {
-    header: "Title",
-    accessor: "title",
+    header: "Name",
+    accessor: "name",
+  },
+  {
+    header: "Class",
+    accessor: "class",
   },
   {
     header: "Description",
     accessor: "description",
     className: "hidden md:table-cell",
   },
-  {
-    header: "Class",
-    accessor: "class",
-  },
+
   {
     header: "Date",
     accessor: "date",

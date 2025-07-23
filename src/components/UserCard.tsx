@@ -2,13 +2,11 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { MoreHorizontal } from "lucide-react";
+import { Users, GraduationCap, BookOpen, UserCheck } from "lucide-react";
 import { UserCardType } from "@/types";
-import prisma from "@/lib/prisma";
+import prisma from "@/libs/prisma";
 
 const UserCard = async ({ type, year }: UserCardType) => {
   const data = {
@@ -20,26 +18,38 @@ const UserCard = async ({ type, year }: UserCardType) => {
 
   const userCount = await (data[type] as any).count();
 
+  const iconMap = {
+    admin: UserCheck,
+    teacher: GraduationCap,
+    student: BookOpen,
+    parent: Users,
+  };
+
+  const IconComponent = iconMap[type];
+
   return (
-    <Card className="flex-1 min-w-[130px] odd:bg-thirdColor even:bg-firstColor border-none">
-      <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
+    <Card className="flex-1 min-w-[180px] bg-white">
+      <CardHeader className="p-4 flex flex-row items-center justify-between">
+        <div className="p-2 bg-muted rounded-full">
+          <IconComponent className="h-5 w-5 text-muted-foreground" />
+        </div>
         <Badge
           variant="outline"
-          className="bg-white text-green-600 rounded-full px-2 py-1 text-[10px]"
+          className="rounded-full px-3 py-1 text-xs font-medium"
         >
           {year}
         </Badge>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal className="h-4 w-4" />
-          <span className="sr-only">Menu</span>
-        </Button>
       </CardHeader>
       <CardContent className="p-4 pt-2">
-        <h1 className="text-2xl font-semibold">{userCount.toLocaleString()}</h1>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-muted-foreground capitalize tracking-wide">
+            {type === "admin" ? "Administrators" : `${type}s`}
+          </p>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+            {userCount.toLocaleString()}
+          </h1>
+        </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0">
-        <p className="text-sm font-medium text-gray-500 capitalize">{type}s</p>
-      </CardFooter>
     </Card>
   );
 };

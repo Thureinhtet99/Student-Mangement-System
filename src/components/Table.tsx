@@ -23,7 +23,7 @@ const Table = ({
   );
 
   return (
-    <div className="rounded-md">
+    <div className="rounded-md bg-white mx-1">
       <ShadcnTable>
         <TableHeader>
           <TableRow>

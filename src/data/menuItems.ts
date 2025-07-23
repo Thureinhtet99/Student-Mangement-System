@@ -1,3 +1,5 @@
+import { ROUTE_CONFIG } from "@/configs/appConfig";
+
 export const menuItems = [
   {
     title: "MENU",
@@ -5,111 +7,112 @@ export const menuItems = [
       {
         icon: "/home.png",
         label: "Home",
-        href: "/",
+        href: `${ROUTE_CONFIG.HOME}`,
         visible: ["admin", "teacher", "student", "parent"],
       },
       {
         icon: "/teacher.png",
         label: "Teachers",
-        href: "/list/teachers",
+        href: `${ROUTE_CONFIG.TEACHER_LIST}`,
         visible: ["admin", "teacher"],
       },
       {
         icon: "/student.png",
         label: "Students",
-        href: "/list/students",
+        href: `${ROUTE_CONFIG.STUDENT_LIST}`,
         visible: ["admin", "teacher"],
       },
       {
         icon: "/parent.png",
         label: "Parents",
-        href: "/list/parents",
+        href: `${ROUTE_CONFIG.PARENT_LIST}`,
+        visible: ["admin", "teacher"],
+      },
+      {
+        icon: "/class.png",
+        label: "Classes",
+        href: `${ROUTE_CONFIG.CLASS_LIST}`,
         visible: ["admin", "teacher"],
       },
       {
         icon: "/subject.png",
         label: "Subjects",
-        href: "/list/subjects",
+        href: `${ROUTE_CONFIG.SUBJECT_LIST}`,
         visible: ["admin"],
-      },
-      {
-        icon: "/class.png",
-        label: "Classes",
-        href: "/list/classes",
-        visible: ["admin", "teacher"],
       },
       {
         icon: "/lesson.png",
         label: "Lessons",
-        href: "/list/lessons",
+        href: `${ROUTE_CONFIG.LESSON_LIST}`,
         visible: ["admin", "teacher"],
       },
       {
-        icon: "/exam.png",
-        label: "Exams",
-        href: "/list/exams",
+        icon: "/attendance.png",
+        label: "Attendances",
+        href: `${ROUTE_CONFIG.ATTENDANCE_LIST}`,
         visible: ["admin", "teacher", "student", "parent"],
       },
       {
         icon: "/assignment.png",
         label: "Assignments",
-        href: "/list/assignments",
+        href: `${ROUTE_CONFIG.ASSIGNMENT_LIST}`,
         visible: ["admin", "teacher", "student", "parent"],
       },
+      {
+        icon: "/exam.png",
+        label: "Exams",
+        href: `${ROUTE_CONFIG.EXAM_LIST}`,
+        visible: ["admin", "teacher", "student", "parent"],
+      },
+
       {
         icon: "/result.png",
         label: "Results",
-        href: "/list/results",
-        visible: ["admin", "teacher", "student", "parent"],
-      },
-      {
-        icon: "/attendance.png",
-        label: "Attendances",
-        href: "/list/attendances",
+        href: `${ROUTE_CONFIG.RESULT_LIST}`,
         visible: ["admin", "teacher", "student", "parent"],
       },
       {
         icon: "/calendar.png",
         label: "Events",
-        href: "/list/events",
-        visible: ["admin", "teacher", "student", "parent"],
-      },
-      {
-        icon: "/message.png",
-        label: "Messages",
-        href: "/list/messages",
+        href: `${ROUTE_CONFIG.EVENT_LIST}`,
         visible: ["admin", "teacher", "student", "parent"],
       },
       {
         icon: "/announcement.png",
         label: "Announcements",
-        href: "/list/announcements",
+        href: `${ROUTE_CONFIG.ANNOUNCEMENT_LIST}`,
+        visible: ["admin", "teacher", "student", "parent"],
+      },
+      {
+        icon: "/message.png",
+        label: "Messages",
+        href: `${ROUTE_CONFIG.MESSAGE_LIST}`,
         visible: ["admin", "teacher", "student", "parent"],
       },
     ],
   },
-  
+
   {
     title: "OTHER",
     items: [
       {
         icon: "/profile.png",
         label: "Profile",
-        href: "/profile",
+        href: `${ROUTE_CONFIG.PROFILE}`,
         visible: ["admin", "teacher", "student", "parent"],
       },
       {
         icon: "/setting.png",
         label: "Settings",
-        href: "/settings",
+        href: `${ROUTE_CONFIG.SETTINGS}`,
         visible: ["admin", "teacher", "student", "parent"],
       },
-      {
-        icon: "/logout.png",
-        label: "Logout",
-        href: "/logout",
-        visible: ["admin", "teacher", "student", "parent"],
-      },
+      // {
+      //   icon: "/logout.png",
+      //   label: "Logout",
+      //   href: "/logout",
+      //   visible: ["admin", "teacher", "student", "parent"],
+      // },
     ],
   },
 ];

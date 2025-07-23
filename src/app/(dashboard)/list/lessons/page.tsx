@@ -3,12 +3,12 @@ import FormModal from "@/components/FormModal";
 import { LessonListType } from "@/types";
 import { TableCell, TableRow } from "@/components/ui/table";
 import TableCard from "@/components/TableCard";
-import prisma from "@/lib/prisma";
-import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Button } from "@/components/ui/button";
+import prisma from "@/libs/prisma";
+import { ITEM_PER_PAGE } from "@/libs/settings";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 import FormContainer from "@/components/FormContainer";
+import { getSortOrder } from "@/libs/utils";
 
 const renderRow = async (item: LessonListType) => {
   const { sessionClaims } = await auth();
@@ -16,16 +16,13 @@ const renderRow = async (item: LessonListType) => {
 
   return (
     <TableRow key={item.id}>
-      <TableCell className="hidden md:table-cell">{item.id}</TableCell>
-      <TableCell>{item.name}</TableCell>
-      <TableCell>{item.subject.name}</TableCell>
-      <TableCell className="hidden md:table-cell">
-        {/* {item.class.name} */}-
+      <TableCell className="w-4/12 min-w-4/12 max-w-4/12">
+        {item.name}
       </TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {/* {item.class.teacher?.name} */}-
+      <TableCell className="w-7/12 min-w-7/12 max-w-7/12">
+        {item?.subject?.name || "-"}
       </TableCell>
-      <TableCell>
+      <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
         <div className="flex justify-end items-center md:gap-2">
           {role === "admin" && (
             <>
@@ -42,86 +39,55 @@ const renderRow = async (item: LessonListType) => {
 const LessonListPage = async ({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Promise<{ [key: string]: string | undefined }>;
 }) => {
-  const { page, ...queryParams } = searchParams;
+  const resolvedSearchParams = await searchParams;
+  const { page, ...queryParams } = resolvedSearchParams;
   const p = page ? parseInt(page) : 1;
 
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  // const whereClause = {
-  //   AND: [
-  //     {
-  //       OR: [
-  //         // Teacher
-  //         {
-  //           subject: {
-  //             class: {
-  //               teacher: { id: userId! },
-  //             },
-  //           },
-  //         },
-  //         // Student
-  //         {
-  //           subject: {
-  //             class: {
-  //               students: {
-  //                 some: {
-  //                   id: userId!,
-  //                 },
-  //               },
-  //             },
-  //           },
-  //         },
-  //         // Parent
-  //         {
-  //           subject: {
-  //             class: {
-  //               students: {
-  //                 some: {
-  //                   parent: { id: userId! },
-  //                 },
-  //               },
-  //             },
-  //           },
-  //         },
-  //       ],
-  //     },
-  //     ...(queryParams.search
-  //       ? [
-  //           {
-  //             OR: [
-  //               {
-  //                 name: {
-  //                   contains: queryParams.search,
-  //                   mode: Prisma.QueryMode.insensitive,
-  //                 },
-  //               },
-  //               {
-  //                 subject: {
-  //                   name: {
-  //                     contains: queryParams.search,
-  //                     mode: Prisma.QueryMode.insensitive,
-  //                   },
-  //                 },
-  //               },
-  //             ],
-  //           },
-  //         ]
-  //       : []),
-  //   ],
-  // };
+  const searchCondition = queryParams.search
+    ? {
+        OR: [
+          {
+            name: {
+              contains: queryParams.search,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
+          {
+            subject: {
+              name: {
+                contains: queryParams.search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          },
+        ],
+      }
+    : {};
+
+  const whereClause =
+    role === "admin"
+      ? searchCondition
+      : {
+          AND: [searchCondition].filter(
+            (condition) => Object.keys(condition).length > 0
+          ), // Remove empty conditions
+        };
 
   const [lessons, count] = await prisma.$transaction([
     prisma.lesson.findMany({
-      // where: whereClause,
+      where: whereClause,
       include: { subject: true },
+      orderBy: getSortOrder(queryParams.sort),
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
     prisma.lesson.count({
-      // where: whereClause,
+      where: whereClause,
     }),
   ]);
 

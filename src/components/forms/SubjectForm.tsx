@@ -3,7 +3,6 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -16,25 +15,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { subjectFormSchema } from "@/lib/formSchema";
+import { subjectFormSchema } from "@/libs/formSchema";
 import { useState } from "react";
-import { LoaderCircle, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { createSubject, updateSubject } from "@/lib/actions";
+import { createSubject, updateSubject } from "@/libs/actions";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Checkbox } from "@/components/ui/checkbox";
+import MultiSelectBox from "../MultiSelectBox";
+import FormActionButton from "../FormActionButton";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input as SearchInput } from "@/components/ui/input";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 // Schema type
 type Inputs = z.infer<typeof subjectFormSchema>;
@@ -50,11 +44,17 @@ const SubjectForm = ({
   onClose?: () => void;
   relatedData?: any;
 }) => {
-  const [selectedTeachers, setSelectedTeachers] = useState<string[]>(
+  const [selectedLessons, setSelectedLessons] = useState<(string | number)[]>(
+    data?.lessons?.map((t: any) => t.id) || []
+  );
+  const [selectedTeachers, setSelectedTeachers] = useState<(string | number)[]>(
     data?.teachers?.map((t: any) => t.id) || []
   );
-  const [teacherSearchQuery, setTeacherSearchQuery] = useState("");
+  const initialSelectedLessons = data?.lessons?.map((t: any) => t.id) || [];
+  const initialSelectedTeachers = data?.teachers?.map((t: any) => t.id) || [];
 
+  const lessons = relatedData?.lessons || [];
+  const classes = relatedData?.classes || [];
   const teachers = relatedData?.teachers || [];
 
   const form = useForm<Inputs>({
@@ -66,20 +66,12 @@ const SubjectForm = ({
     },
   });
 
-  const filteredTeachers = teachers.filter((teacher: any) =>
-    teacher.name.toLowerCase().includes(teacherSearchQuery.toLowerCase())
-  );
-
-  const toggleTeacherSelection = (teacherId: string) => {
-    setSelectedTeachers((prev) =>
-      prev.includes(teacherId)
-        ? prev.filter((id) => id !== teacherId)
-        : [...prev, teacherId]
-    );
-  };
-
-  const removeTeacher = (teacherId: string) => {
-    setSelectedTeachers((prev) => prev.filter((id) => id !== teacherId));
+  const handleReset = () => {
+    form.reset();
+    if (type === "create" || "update") {
+      setSelectedLessons(initialSelectedLessons);
+      setSelectedTeachers(initialSelectedTeachers);
+    }
   };
 
   // Mutation
@@ -102,21 +94,22 @@ const SubjectForm = ({
         `Subject is ${type === "create" ? "created" : "updated"} successfully`
       );
       form.reset();
+      setSelectedLessons([]);
       setSelectedTeachers([]);
       onClose?.();
     },
-    onError: (error) => {
+    onError: () => {
       toast.error(
-        `Failed to ${type === "create" ? "create" : "update"} subject: ${
-          error.message
-        }`
+        `Failed to ${type === "create" ? "create" : "update"} subject`
       );
     },
   });
 
   const onSubmit = (values: Inputs) => {
     const formData = {
+      ...(type === "update" && data?.id && { id: data.id }),
       ...values,
+      lessons: selectedLessons,
       teachers: selectedTeachers,
     };
     mutate(formData);
@@ -155,99 +148,59 @@ const SubjectForm = ({
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Teacher Selection Dialog */}
-              <FormItem className="flex flex-col space-y-2">
-                <FormLabel>Select Teachers</FormLabel>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-between"
-                    >
-                      {selectedTeachers.length > 0
-                        ? `${selectedTeachers.length} teacher${
-                            selectedTeachers.length > 1 ? "s" : ""
-                          } selected`
-                        : "Select teachers"}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Select Teachers</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4">
-                      <SearchInput
-                        placeholder="Search teachers..."
-                        value={teacherSearchQuery}
-                        onChange={(e) => setTeacherSearchQuery(e.target.value)}
-                        className="mb-4"
-                      />
-                      <ScrollArea className="h-[300px] pr-4">
-                        {filteredTeachers.length === 0 ? (
-                          <p className="text-center text-muted-foreground py-4">
-                            No teachers found
-                          </p>
-                        ) : (
-                          <div className="space-y-2">
-                            {filteredTeachers.map((teacher: any) => (
-                              <div
-                                key={teacher.id}
-                                className="flex items-center space-x-2"
-                              >
-                                <Checkbox
-                                  id={`teacher-${teacher.id}`}
-                                  checked={selectedTeachers.includes(
-                                    teacher.id
-                                  )}
-                                  onCheckedChange={() =>
-                                    toggleTeacherSelection(teacher.id)
-                                  }
-                                />
-                                <label
-                                  htmlFor={`teacher-${teacher.id}`}
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                                >
-                                  {teacher.name}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </ScrollArea>
-                    </div>
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button type="button">Done</Button>
-                      </DialogClose>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-                {selectedTeachers.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2 max-h-[100px] overflow-y-auto p-1">
-                    {selectedTeachers.map((teacherId) => {
-                      const teacher = teachers.find(
-                        (t: any) => t.id === teacherId
-                      );
-                      return (
-                        <Badge
-                          key={teacherId}
-                          variant="secondary"
-                          className="flex items-center gap-1"
-                        >
-                          {teacher?.name || teacherId}
-                          <X
-                            className="h-3 w-3 cursor-pointer"
-                            onClick={() => removeTeacher(teacherId)}
-                          />
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                )}
-                <FormDescription>
-                  Select the teachers who will be teaching this subject.
-                </FormDescription>
-              </FormItem>
+              <div className="space-y-8">
+                <FormField
+                  control={form.control}
+                  name="classId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Class</FormLabel>
+                      <Select
+                        value={field.value ? String(field.value) : ""}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select class" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {classes?.length === 0 ? (
+                            <SelectItem value="empty" disabled>
+                              No classes found
+                            </SelectItem>
+                          ) : (
+                            classes?.map((c: any) => (
+                              <SelectItem key={c.id} value={String(c.id)}>
+                                {c.name}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <MultiSelectBox
+                  name="lesson"
+                  subject="subjects"
+                  verb="including"
+                  items={lessons}
+                  selectedItems={selectedLessons}
+                  setSelectedItems={setSelectedLessons}
+                />
+              </div>
+
+              <MultiSelectBox
+                name="teacher"
+                subject="subjects"
+                verb="including"
+                items={teachers}
+                selectedItems={selectedTeachers}
+                setSelectedItems={setSelectedTeachers}
+              />
             </div>
 
             <FormField
@@ -265,44 +218,20 @@ const SubjectForm = ({
                     />
                   </FormControl>
                   <FormDescription>
-                    Provide a brief description of the subject (optional).
+                    Provide a brief description of the subject (optional)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="flex justify-end gap-x-2">
-              <Button
-                variant="destructive"
-                type="reset"
-                className="w-full md:w-auto"
-                onClick={() => {
-                  form.reset();
-                  setSelectedTeachers([]);
-                  resetMutation();
-                }}
-                disabled={isPending}
-              >
-                Reset
-              </Button>
-              <Button
-                type="submit"
-                className="w-full md:w-auto"
-                disabled={isPending}
-              >
-                {isPending ? (
-                  <>
-                    <LoaderCircle className="animate-spin h-4 w-4 mr-2" />
-                    {type === "create" ? "Creating..." : "Updating..."}
-                  </>
-                ) : type === "create" ? (
-                  "Create"
-                ) : (
-                  "Update"
-                )}
-              </Button>
-            </div>
+            <FormActionButton
+              form={form}
+              setSelectedItems={handleReset}
+              resetMutation={resetMutation}
+              isPending={isPending}
+              type={type}
+            />
           </form>
         </Form>
       </CardContent>
