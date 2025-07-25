@@ -14,7 +14,10 @@ pnpm dev
 bun dev
 ```
 
-Seed data to test by running - npx prisma migrate reset
+Seed data:
+```bash
+npx prisma migrate reset
+```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
