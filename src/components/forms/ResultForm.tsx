@@ -131,29 +131,45 @@ const ResultForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Student</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value || ""}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select student" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="h-[400px]">
-                      {students?.length === 0 ? (
-                        <SelectItem value="empty" disabled>
-                          No students found
-                        </SelectItem>
-                      ) : (
-                        students?.map((student: any) => (
-                          <SelectItem key={student.id} value={student.id}>
-                            {student.name}
+                  {type === "create" ? (
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select student" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="h-[400px]">
+                        {students?.length === 0 ? (
+                          <SelectItem value="empty" disabled>
+                            No students found
                           </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                        ) : (
+                          students?.map((student: any) => (
+                            <SelectItem key={student.id} value={student.id}>
+                              {student.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <FormControl>
+                      <Input
+                        type="text"
+                        value={
+                          students.find(
+                            (s: any) => s.id.toString() === field.value
+                          )?.name || ""
+                        }
+                        disabled
+                        readOnly
+                        className="bg-muted"
+                      />
+                    </FormControl>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

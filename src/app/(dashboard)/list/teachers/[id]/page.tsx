@@ -210,16 +210,18 @@ const SingleTeacherPage = async ({
         </Card>
 
         {/* Performance */}
-        <Card>
+        {/* <Card>
           <CardContent>
             <div className="py-4">
               <div>
                 <h3 className="font-medium mb-3">Performance</h3>
-                <div className="space-y-3">{/* <Performance /> */}</div>
+                <div className="space-y-3">
+                  <Performance />
+                  </div>
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
         {/* <TeacherPerformance
           teacherId={teacher.id}
           subjects={teacher.subjects || []}
@@ -230,19 +232,8 @@ const SingleTeacherPage = async ({
         <Card>
           <CardContent>
             <div className="py-4">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-medium">Announcements</h3>
-                  <Link
-                    href={ROUTE_CONFIG.ANNOUNCEMENT_LIST}
-                    className="text-sm text-gray-500 hover:text-gray-700 hover:underline transition-colors"
-                  >
-                    View All
-                  </Link>
-                </div>
-                <div className="space-y-3">
-                  <Announcements />
-                </div>
+              <div className="space-y-3">
+                <Announcements />
               </div>
             </div>
           </CardContent>

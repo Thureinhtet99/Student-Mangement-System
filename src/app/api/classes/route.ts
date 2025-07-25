@@ -22,7 +22,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, capacity } = body;
+    const { name } = body;
 
     // Validation
     if (!name) {
@@ -44,7 +44,6 @@ export async function POST(request: NextRequest) {
     const createClass = await prisma.class.create({
       data: {
         name,
-        capacity,
       },
     });
 

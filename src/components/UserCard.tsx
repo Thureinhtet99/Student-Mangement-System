@@ -1,14 +1,13 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, GraduationCap, BookOpen, UserCheck } from "lucide-react";
-import { UserCardType } from "@/types";
+import { Users, GraduationCap, User, UserCheck } from "lucide-react";
 import prisma from "@/libs/prisma";
 
-const UserCard = async ({ type, year }: UserCardType) => {
+const UserCard = async ({
+  type,
+}: {
+  type: "admin" | "teacher" | "student" | "parent";
+}) => {
   const data = {
     admin: prisma.admin,
     teacher: prisma.teacher,
@@ -21,7 +20,7 @@ const UserCard = async ({ type, year }: UserCardType) => {
   const iconMap = {
     admin: UserCheck,
     teacher: GraduationCap,
-    student: BookOpen,
+    student: User,
     parent: Users,
   };
 
@@ -37,7 +36,8 @@ const UserCard = async ({ type, year }: UserCardType) => {
           variant="outline"
           className="rounded-full px-3 py-1 text-xs font-medium"
         >
-          {year}
+          {new Date().getFullYear()} /{" "}
+          {(new Date().getFullYear() + 1).toString().slice(2)}
         </Badge>
       </CardHeader>
       <CardContent className="p-4 pt-2">

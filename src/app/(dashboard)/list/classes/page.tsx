@@ -23,23 +23,21 @@ const renderRow = async (item: ClassListType) => {
       <TableCell className="w-2/12 min-w-2/12 max-w-3/12 ">
         {item.name}
       </TableCell>
-      <TableCell className="hidden md:table-cell w-1/12 min-w-1/12 max-w-1/12 ">
-        {item?.capacity || 0}
-      </TableCell>
+
       <TableCell className=" w-2/12 min-w-2/12 max-w-2/12">
         <Link
           href={`${ROUTE_CONFIG.TEACHER_LIST}/${item.id}`}
-          className="hover:text-blue-800 hover:underline"
+          className="text-secondColor hover:underline"
         >
           {item?.teacher?.name || "-"}
         </Link>
       </TableCell>
       <TableCell className="hidden lg:table-cell  w-3/12 min-w-3/12 max-w-3/12">
-        <BadgeList table={item?.subjects} text="subject" />
+        <BadgeList table={item?.subjects ?? []} text="subject" />
       </TableCell>
       <TableCell className="hidden md:table-cell w-3/12 min-w-3/12 max-w-/12 text-xs ">
         <PeopleList
-          table={item?.students}
+          table={item?.students ?? []}
           text="student"
           route={ROUTE_CONFIG.STUDENT_LIST}
         />
@@ -89,6 +87,16 @@ const ClassListPage = async ({
           },
           {
             subjects: {
+              some: {
+                name: {
+                  contains: queryParams.search,
+                  mode: Prisma.QueryMode.insensitive,
+                },
+              },
+            },
+          },
+          {
+            students: {
               some: {
                 name: {
                   contains: queryParams.search,

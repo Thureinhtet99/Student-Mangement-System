@@ -69,7 +69,7 @@ const TeacherForm = ({
       name: data?.name || "",
       phone: data?.phone || "",
       address: data?.address || "",
-      gender: data?.gender || "MALE",
+      gender: data?.gender || "",
       birthday: data?.birthday ? new Date(data.birthday) : undefined,
       image: data?.image || "",
     },

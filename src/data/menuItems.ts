@@ -14,7 +14,7 @@ export const menuItems = [
         icon: "/teacher.png",
         label: "Teachers",
         href: `${ROUTE_CONFIG.TEACHER_LIST}`,
-        visible: ["admin", "teacher"],
+        visible: ["admin"],
       },
       {
         icon: "/student.png",
@@ -83,36 +83,36 @@ export const menuItems = [
         href: `${ROUTE_CONFIG.ANNOUNCEMENT_LIST}`,
         visible: ["admin", "teacher", "student", "parent"],
       },
-      {
-        icon: "/message.png",
-        label: "Messages",
-        href: `${ROUTE_CONFIG.MESSAGE_LIST}`,
-        visible: ["admin", "teacher", "student", "parent"],
-      },
-    ],
-  },
-
-  {
-    title: "OTHER",
-    items: [
-      {
-        icon: "/profile.png",
-        label: "Profile",
-        href: `${ROUTE_CONFIG.PROFILE}`,
-        visible: ["admin", "teacher", "student", "parent"],
-      },
-      {
-        icon: "/setting.png",
-        label: "Settings",
-        href: `${ROUTE_CONFIG.SETTINGS}`,
-        visible: ["admin", "teacher", "student", "parent"],
-      },
       // {
-      //   icon: "/logout.png",
-      //   label: "Logout",
-      //   href: "/logout",
+      //   icon: "/message.png",
+      //   label: "Messages",
+      //   href: `${ROUTE_CONFIG.MESSAGE_LIST}`,
       //   visible: ["admin", "teacher", "student", "parent"],
       // },
     ],
   },
+
+  // {
+  //   title: "OTHER",
+  //   items: [
+  //     {
+  //       icon: "/profile.png",
+  //       label: "Profile",
+  //       href: `${ROUTE_CONFIG.PROFILE}`,
+  //       visible: ["admin", "teacher", "student", "parent"],
+  //     },
+  //     {
+  //       icon: "/setting.png",
+  //       label: "Settings",
+  //       href: `${ROUTE_CONFIG.SETTINGS}`,
+  //       visible: ["admin", "teacher", "student", "parent"],
+  //     },
+  //     {
+  //       icon: "/logout.png",
+  //       label: "Logout",
+  //       href: "/logout",
+  //       visible: ["admin", "teacher", "student", "parent"],
+  //     },
+  //   ],
+  // },
 ];

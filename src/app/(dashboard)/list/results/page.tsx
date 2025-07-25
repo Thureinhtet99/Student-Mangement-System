@@ -17,7 +17,6 @@ const renderRow = async (item: ResultListType) => {
 
   // Determine the display name based on type
   const displayName = item.exam?.name || item.assignment?.name;
-  // const resultType = item.exam ? "exam" : "assignment";
 
   return (
     <TableRow key={item.id}>
@@ -27,7 +26,7 @@ const renderRow = async (item: ResultListType) => {
       <TableCell className="w-2/12 min-w-2/12 max-w-2/12">
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${
-            item.score >= 90
+            item.score >= 80
               ? "bg-green-100 text-green-800"
               : item.score >= 40
               ? "bg-yellow-100 text-yellow-800"
@@ -222,6 +221,11 @@ const ResultListPage = async ({
     type: item.exam ? "exam" : "assignment",
   })) as ResultListType[];
 
+  // Filter results based on active tab
+  const filteredResults = processedResults.filter(
+    (item) => item.type === (isExamTab ? "exam" : "assignment")
+  );
+
   const currentCount = isExamTab ? examCount : assignmentCount;
 
   return (
@@ -234,7 +238,7 @@ const ResultListPage = async ({
           activeTab === "exams" ? (
             <TableCard<ResultListType>
               renderRow={renderRow}
-              data={processedResults}
+              data={filteredResults}
               columns={examResultColumns}
               page={p}
               count={currentCount}
@@ -249,7 +253,7 @@ const ResultListPage = async ({
           activeTab === "assignments" ? (
             <TableCard<ResultListType>
               renderRow={renderRow}
-              data={processedResults}
+              data={filteredResults}
               columns={assignmentResultColumns}
               page={p}
               count={currentCount}

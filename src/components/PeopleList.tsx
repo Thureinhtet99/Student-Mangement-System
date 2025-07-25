@@ -23,7 +23,7 @@ const PeopleList = ({ table, text, route }: BadgeListType) => {
           <React.Fragment key={data.id}>
             <Link
               href={`${route}/${data.id}`}
-              className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200 text-xs font-medium"
+              className="text-secondColor hover:text-firstColor hover:underline transition-colors duration-200 text-xs font-medium"
             >
               {data.name}
             </Link>
@@ -43,7 +43,7 @@ const PeopleList = ({ table, text, route }: BadgeListType) => {
         <React.Fragment key={data.id}>
           <Link
             href={`${route}/${data.id}`}
-            className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200 text-xs font-medium"
+            className="text-secondColor hover:text-firstColor hover:underline transition-colors duration-200 text-xs font-medium"
           >
             {data.name}
           </Link>
@@ -59,7 +59,7 @@ const PeopleList = ({ table, text, route }: BadgeListType) => {
               <span className="text-gray-400 text-sm">,</span>
               <Link
                 href={`${route}/${data.id}`}
-                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200 text-xs font-medium animate-in fade-in-0"
+                className="text-firstColor hover:text-secondColor hover:underline transition-colors duration-200 text-xs font-medium animate-in fade-in-0"
               >
                 {data.name}
               </Link>
@@ -71,7 +71,7 @@ const PeopleList = ({ table, text, route }: BadgeListType) => {
       {/* Toggle button */}
       <Badge
         variant="outline"
-        className="ml-1 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 cursor-pointer text-blue-600 border-blue-200 transition-all duration-200 text-xs font-medium select-none"
+        className="ml-1 hover:bg-blue-50 hover:border-firstColor hover:text-secondColor cursor-pointer text-firstColor border-secondColor transition-all duration-200 text-xs font-medium select-none"
         onClick={toggleExpanded}
         role="button"
         tabIndex={0}

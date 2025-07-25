@@ -284,7 +284,7 @@ export const getClasses = async () => {
   }
 };
 
-export const getClassById = async (id: number) => {
+export const getClassById = async ({ id }: { id: number }) => {
   try {
     const classById = await prisma.class.findUnique({
       where: { id },
@@ -327,7 +327,7 @@ export const getSubjects = async () => {
   }
 };
 
-export const getSubjectById = async (id: number) => {
+export const getSubjectById = async ({ id }: { id: number }) => {
   try {
     const subject = await prisma.subject.findUnique({
       where: { id },
@@ -366,7 +366,7 @@ export const getLessons = async () => {
   }
 };
 
-// export const getLessonById = async (id: number) => {
+// export const getLessonById = async ({ id }: { id: number }) => {
 //   try {
 //     const lesson = await prisma.lesson.findUnique({
 //       where: { id },
@@ -420,7 +420,7 @@ export const getAssignments = async () => {
   }
 };
 
-// export const getAssignmentById = async (id: number) => {
+// export const getAssignmentById = async ({ id }: { id: number }) => {
 //   try {
 //     const assignment = await prisma.assignment.findUnique({
 //       where: { id },
@@ -457,7 +457,7 @@ export const getExams = async () => {
   }
 };
 
-export const getExamById = async (id: number) => {
+export const getExamById = async ({ id }: { id: number }) => {
   try {
     const exam = await prisma.exam.findUnique({
       where: { id },
@@ -495,7 +495,7 @@ export const getResults = async () => {
   }
 };
 
-// export const getResultById = async (id: number) => {
+// export const getResultById = async ({ id }: { id: number }) => {
 //   try {
 //     const result = await prisma.result.findUnique({
 //       where: { id },
@@ -589,7 +589,7 @@ export const getMessages = async () => {
   }
 };
 
-// export const getMessageById = async (id: number) => {
+// export const getMessageById = async ({ id }: { id: number }) => {
 //   try {
 //     const message = await prisma.message.findUnique({
 //       where: { id },
@@ -898,7 +898,6 @@ export const createClass = async (data: ClassFormSchema) => {
     const classItem = await prisma.class.create({
       data: {
         name: data.name,
-        capacity: data.capacity,
         teacher: data.teacherId
           ? {
               connect: { id: data.teacherId },
@@ -1025,7 +1024,7 @@ export const createAttendance = async (data: AttendanceFormSchema) => {
     const attendance = await prisma.attendance.create({
       data: {
         present: data.present,
-        date: new Date(data.date),
+        date: data.date && new Date(data.date).toISOString(),
         student: data.studentId
           ? { connect: { id: data.studentId } }
           : undefined,
@@ -1270,7 +1269,7 @@ export const createAnnouncement = async (data: AnnouncementFormSchema) => {
 //       },
 //     });
 
-    // revalidatePath(`${ROUTE_CONFIG.MESSAGE_LIST}`);
+// revalidatePath(`${ROUTE_CONFIG.MESSAGE_LIST}`);
 
 //     return {
 //       message,
@@ -1640,7 +1639,6 @@ export const updateClass = async (data: ClassFormSchema) => {
       },
       data: {
         name: data.name,
-        capacity: data.capacity,
         teacher: data.teacherId
           ? {
               connect: { id: data.teacherId },
@@ -2039,7 +2037,7 @@ export const updateAnnouncement = async (data: AnnouncementFormSchema) => {
 
 //---------- DELETE ----------//
 // Teacher
-export const deleteTeacher = async (id: string) => {
+export const deleteTeacher = async ({ id }: { id: string }) => {
   try {
     const existingTeacher = await prisma.teacher.findUnique({
       where: { id },
@@ -2077,7 +2075,7 @@ export const deleteTeacher = async (id: string) => {
 };
 
 // Student
-export const deleteStudent = async (id: string) => {
+export const deleteStudent = async ({ id }: { id: string }) => {
   try {
     const existingStudent = await prisma.student.findUnique({
       where: { id },
@@ -2115,7 +2113,7 @@ export const deleteStudent = async (id: string) => {
 };
 
 // Class
-export const deleteClass = async (id: number) => {
+export const deleteClass = async ({ id }: { id: number }) => {
   try {
     const existingClass = await prisma.class.findUnique({
       where: { id },
@@ -2140,7 +2138,7 @@ export const deleteClass = async (id: number) => {
 };
 
 // Subject
-export const deleteSubject = async (id: number) => {
+export const deleteSubject = async ({ id }: { id: number }) => {
   try {
     const existingSubject = await prisma.subject.findUnique({
       where: { id },
@@ -2165,7 +2163,7 @@ export const deleteSubject = async (id: number) => {
 };
 
 // Parent
-export const deleteParent = async (id: string) => {
+export const deleteParent = async ({ id }: { id: string }) => {
   try {
     const existingParent = await prisma.parent.findUnique({
       where: { id },
@@ -2189,7 +2187,7 @@ export const deleteParent = async (id: string) => {
   }
 };
 
-export const deleteLesson = async (id: number) => {
+export const deleteLesson = async ({ id }: { id: number }) => {
   try {
     const existingLesson = await prisma.lesson.findUnique({
       where: { id },
@@ -2213,7 +2211,7 @@ export const deleteLesson = async (id: number) => {
   }
 };
 
-export const deleteExam = async (id: number) => {
+export const deleteExam = async ({ id }: { id: number }) => {
   try {
     const existingExam = await prisma.exam.findUnique({
       where: { id },
@@ -2237,7 +2235,7 @@ export const deleteExam = async (id: number) => {
   }
 };
 
-export const deleteAssignment = async (id: number) => {
+export const deleteAssignment = async ({ id }: { id: number }) => {
   try {
     const existingAssignment = await prisma.assignment.findUnique({
       where: { id },
@@ -2261,7 +2259,7 @@ export const deleteAssignment = async (id: number) => {
   }
 };
 
-export const deleteResult = async (id: number) => {
+export const deleteResult = async ({ id }: { id: number }) => {
   try {
     const existingResult = await prisma.result.findUnique({
       where: { id },
@@ -2285,7 +2283,7 @@ export const deleteResult = async (id: number) => {
   }
 };
 
-export const deleteAttendance = async (id: number) => {
+export const deleteAttendance = async ({ id }: { id: number }) => {
   try {
     const existingAttendance = await prisma.attendance.findUnique({
       where: { id },
@@ -2309,7 +2307,7 @@ export const deleteAttendance = async (id: number) => {
   }
 };
 
-export const deleteEvent = async (id: number) => {
+export const deleteEvent = async ({ id }: { id: number }) => {
   try {
     const existingEvent = await prisma.event.findUnique({
       where: { id },
@@ -2417,7 +2415,7 @@ export const markMessageAsRead = async ({ id }: { id: number }) => {
   }
 };
 
-export const deleteMessage = async (id: number) => {
+export const deleteMessage = async ({ id }: { id: number }) => {
   try {
     const existingMessage = await prisma.message.findUnique({
       where: { id },

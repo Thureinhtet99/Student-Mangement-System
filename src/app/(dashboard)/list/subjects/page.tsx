@@ -24,21 +24,21 @@ const renderRow = async (item: SubjectListType) => {
       </TableCell>
       <TableCell className="hidden md:table-cell text-xs w-2/12 min-w-2/12 max-w-2/12">
         <PeopleList
-          table={item?.teachers}
+          table={item?.teachers ?? []}
           text="teacher"
           route={ROUTE_CONFIG.TEACHER_LIST}
         />
       </TableCell>
 
-      <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
-        {/* {item?.class || "-"} */}-
+      <TableCell className="hidden lg:table-cell w-1/12 min-w-1/12 max-w-1/12">
+        {item?.class?.name || "-"}
       </TableCell>
 
       <TableCell className="w-3/12 min-w-3/12 max-w-3/12">
-        <BadgeList table={item?.lessons} />
+        <BadgeList table={item?.lessons ?? []} />
       </TableCell>
 
-      <TableCell className="hidden md:table-cell text-xs w-3/12 min-w-3/12 max-w-3/12">
+      <TableCell className="hidden lg:table-cell text-xs w-3/12 min-w-3/12 max-w-3/12">
         {item?.description ? (
           <span>
             {item?.description?.length > 50
@@ -72,7 +72,7 @@ const SubjectListPage = async ({
   const { page, ...queryParams } = resolvedSearchParams;
   const p = page ? parseInt(page) : 1;
 
-  const { userId, sessionClaims } = await auth();
+  const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
   const searchCondition = queryParams.search
@@ -94,6 +94,16 @@ const SubjectListPage = async ({
               },
             },
           },
+          {
+            lessons: {
+              some: {
+                name: {
+                  contains: queryParams.search,
+                  mode: Prisma.QueryMode.insensitive,
+                },
+              },
+            },
+          },
         ],
       }
     : {};
@@ -102,30 +112,15 @@ const SubjectListPage = async ({
     role === "admin"
       ? searchCondition
       : {
-          AND: [
-            {
-              // Teacher
-              class: {
-                teacherId: userId as string,
-              },
-            },
-            searchCondition,
-          ].filter((condition) => Object.keys(condition).length > 0), // Remove empty conditions
+          AND: [searchCondition].filter(
+            (condition) => Object.keys(condition).length > 0
+          ),
         };
-
-  // const whereClause =
-  //   role === "admin"
-  //     ? searchCondition
-  //     : {
-  //         AND: [searchCondition].filter(
-  //           (condition) => Object.keys(condition).length > 0
-  //         ), // Remove empty conditions
-  //       };
 
   const [subjects, count] = await prisma.$transaction([
     prisma.subject.findMany({
       where: whereClause,
-      include: { teachers: true, lessons: true },
+      include: { teachers: true, lessons: true, class: true },
       orderBy: getSortOrder(queryParams.sort),
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),

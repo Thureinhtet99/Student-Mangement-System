@@ -90,7 +90,6 @@ export type ParentFormSchema = z.infer<typeof parentFormSchema>;
 export const classFormSchema = z.object({
   id: z.coerce.number().optional(),
   name: z.string().min(1, { message: "Name is required" }),
-  capacity: z.coerce.number().int().optional(),
   teacherId: z.coerce.string().optional(),
   subjects: z.array(z.coerce.number()).optional(),
   students: z.array(z.coerce.string()).optional(),
@@ -223,8 +222,32 @@ export const eventFormSchema = z
     id: z.coerce.number().optional(),
     name: z.string().min(1, { message: "Name is required" }),
     description: z.string().optional(),
-    startTime: z.coerce.date().optional(),
-    endTime: z.coerce.date().optional(),
+    startTime: z.coerce
+      .date()
+      .refine(
+        (date) => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          return date >= today;
+        },
+        {
+          message: "Start time must be today or after today",
+        }
+      )
+      .optional(),
+    endTime: z.coerce
+      .date()
+      .refine(
+        (date) => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          return date >= today;
+        },
+        {
+          message: "End time must be today or after today",
+        }
+      )
+      .optional(),
     classId: z.coerce.number().optional(),
   })
   .refine(

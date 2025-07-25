@@ -26,13 +26,19 @@ export type PerformanceType = {
   }[];
 };
 
-// export type BadgeListItemType = ;
+export type EventType = {
+  title: string;
+  description?: string | "";
+  date: Date;
+};
 
 export type BadgeListType = {
   table: {
     id: string | number;
     name: string;
   }[];
+  text?: string;
+  route?: string;
 };
 
 export type MultiSelectBoxType<
@@ -99,11 +105,6 @@ export type PaginationType = {
   page?: number;
   count?: number;
   hasNextPage: boolean;
-};
-
-export type UserCardType = {
-  type: "admin" | "teacher" | "student" | "parent";
-  year: string;
 };
 
 export type CustomTitleType = {
@@ -175,7 +176,7 @@ export type ResultListType = Result & {
 };
 
 export type AttendanceListType = Attendance & {
-  student?: Student;
+  student?: Student & { class?: Class };
 };
 
 export type EventListType = Event & { class?: Class | null };

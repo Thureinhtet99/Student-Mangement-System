@@ -1,5 +1,4 @@
 import { parentColumns } from "@/data/columns";
-import FormModal from "@/components/FormModal";
 import { ParentListType } from "@/types";
 import { TableCell, TableRow } from "@/components/ui/table";
 import TableCard from "@/components/TableCard";
@@ -7,7 +6,6 @@ import prisma from "@/libs/prisma";
 import { ITEM_PER_PAGE } from "@/libs/settings";
 import { auth } from "@clerk/nextjs/server";
 import React from "react";
-import Link from "next/link";
 import { Prisma } from "@prisma/client";
 import FormContainer from "@/components/FormContainer";
 import { getSortOrder } from "@/libs/utils";
@@ -31,9 +29,9 @@ const renderRow = async (item: ParentListType) => {
           ? `${item.id.substring(0, 6)}${"*".repeat(4)}`
           : item.id}
       </TableCell>
-      <TableCell className="w-2/12 min-w-2/12 max-w-2/12 text-xs">
+      <TableCell className="w-3/12 min-w-3/12 max-w-3/12 text-xs">
         <PeopleList
-          table={item?.students}
+          table={item?.students as ParentListType[]}
           text="student"
           route={ROUTE_CONFIG.STUDENT_LIST}
         />
@@ -41,7 +39,7 @@ const renderRow = async (item: ParentListType) => {
       <TableCell className="hidden md:table-cell w-2/12 min-w-2/12 max-w-2/12 ">
         {item?.phone || "-"}
       </TableCell>
-      <TableCell className="hidden lg:table-cell  w-3/12 min-w-3/12 max-w-3/12">
+      <TableCell className="hidden lg:table-cell  w-2/12 min-w-2/12 max-w-2/12">
         {item?.address || "-"}
       </TableCell>
       <TableCell className="w-1/12 min-w-1/12 max-w-1/12">

@@ -35,24 +35,9 @@ async function main() {
     await prisma.class.create({
       data: {
         name: `class${i}`,
-        capacity: Math.floor(Math.random() * (20 - 15 + 1)) + 15,
       },
     });
   }
-
-  // // SUBJECT
-  // const subjectData = [
-  //   { name: "Mathematics" },
-  //   { name: "Science" },
-  //   { name: "English" },
-  //   { name: "History" },
-  //   { name: "Geography" },
-  //   { name: "Physics" },
-  //   { name: "Chemistry" },
-  //   { name: "Biology" },
-  //   { name: "Computer Science" },
-  //   { name: "Art" },
-  // ];
 
   for (let i = 1; i <= 10; i++) {
     await prisma.subject.create({
@@ -93,14 +78,14 @@ async function main() {
   // }
 
   // // LESSON
-  // for (let i = 1; i <= 30; i++) {
-  //   await prisma.lesson.create({
-  //     data: {
-  //       name: `Lesson${i}`,
-  //       subjectId: (i % 10) + 1,
-  //     },
-  //   });
-  // }
+  for (let i = 1; i <= 30; i++) {
+    await prisma.lesson.create({
+      data: {
+        name: `Lesson${i}`,
+        subjectId: (i % 10) + 1,
+      },
+    });
+  }
 
   // // PARENT
   for (let i = 1; i <= 25; i++) {
@@ -138,34 +123,34 @@ async function main() {
   }
 
   // // EXAM
-  // for (let i = 1; i <= 10; i++) {
-  //   await prisma.exam.create({
-  //     data: {
-  //       name: `Exam ${i}`,
-  //       startTime: new Date(new Date().setHours(new Date().getHours() + 1)),
-  //       endTime: new Date(new Date().setHours(new Date().getHours() + 2)),
-  //       subjectId: (i % 10) + 1,
-  //     },
-  //   });
-  // }
+  for (let i = 1; i <= 10; i++) {
+    await prisma.exam.create({
+      data: {
+        name: `Exam${i}`,
+        startTime: new Date(new Date().setHours(new Date().getHours() + 1)),
+        endTime: new Date(new Date().setHours(new Date().getHours() + 2)),
+        subjectId: (i % 10) + 1,
+      },
+    });
+  }
 
   // // ASSIGNMENT
-  // for (let i = 1; i <= 10; i++) {
-  //   await prisma.assignment.create({
-  //     data: {
-  //       name: `Assignment ${i}`,
-  //       dueDate: new Date(new Date().setDate(new Date().getDate() + 1)),
-  //       subjectId: (i % 10) + 1,
-  //     },
-  //   });
-  // }
+  for (let i = 1; i <= 10; i++) {
+    await prisma.assignment.create({
+      data: {
+        name: `Assignment ${i}`,
+        dueDate: new Date(new Date().setDate(new Date().getDate() + 1)),
+        subjectId: (i % 10) + 1,
+      },
+    });
+  }
 
   // // RESULT - Fix to handle optional examId and assignmentId
   // for (let i = 1; i <= 10; i++) {
   //   await prisma.result.create({
   //     data: {
   //       score: 90,
-  //       studentId: `student${i}`,
+  //       studentId: `studentId${i}`,
   //       examId: i <= 5 ? i : 1,
   //       assignmentId: i > 5 ? i - 5 : 1,
   //     },
@@ -173,40 +158,40 @@ async function main() {
   // }
 
   // // ATTENDANCE
-  // for (let i = 1; i <= 10; i++) {
-  //   await prisma.attendance.create({
-  //     data: {
-  //       date: new Date(),
-  //       present: true,
-  //       studentId: `student${i}`,
-  //     },
-  //   });
-  // }
+  for (let i = 1; i <= 15; i++) {
+    await prisma.attendance.create({
+      data: {
+        date: new Date(),
+        present: true,
+        studentId: `studentId${i}`,
+      },
+    });
+  }
 
   // // EVENT
-  // for (let i = 1; i <= 5; i++) {
-  //   await prisma.event.create({
-  //     data: {
-  //       name: `Event ${i}`,
-  //       description: `Description for Event ${i}`,
-  //       startTime: new Date(new Date().setHours(new Date().getHours() + 1)),
-  //       endTime: new Date(new Date().setHours(new Date().getHours() + 2)),
-  //       classId: (i % 5) + 1,
-  //     },
-  //   });
-  // }
+  for (let i = 1; i <= 8; i++) {
+    await prisma.event.create({
+      data: {
+        name: `Event ${i}`,
+        description: `Description for Event ${i}`,
+        startTime: new Date(new Date().setHours(new Date().getHours() + 1)),
+        endTime: new Date(new Date().setHours(new Date().getHours() + 2)),
+        classId: (i % 8) + 1,
+      },
+    });
+  }
 
   // // ANNOUNCEMENT
-  // for (let i = 1; i <= 5; i++) {
-  //   await prisma.announcement.create({
-  //     data: {
-  //       name: `Announcement ${i}`,
-  //       description: `Description for Announcement ${i}`,
-  //       date: new Date(),
-  //       classId: (i % 5) + 1,
-  //     },
-  //   });
-  // }
+  for (let i = 1; i <= 5; i++) {
+    await prisma.announcement.create({
+      data: {
+        name: `Announcement ${i}`,
+        description: `Description for Announcement ${i}`,
+        date: new Date(),
+        classId: (i % 5) + 1,
+      },
+    });
+  }
 
   console.log("Seeding completed successfully.");
 }

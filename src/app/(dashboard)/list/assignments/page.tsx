@@ -16,13 +16,13 @@ const renderRow = async (item: AssignmentListType) => {
 
   return (
     <TableRow key={item.id}>
-      <TableCell className="w-6/12 min-w-6/12 max-w-6/12">
+      <TableCell className="w-5/12 min-w-5/12 max-w-5/12">
         {item.name}
       </TableCell>
       <TableCell className="w-3/12 min-w-3/12 max-w-3/12 hidden md:table-cell">
-        {item?.subject?.name}
+        {item?.subject?.name || "-"}
       </TableCell>
-      <TableCell className="w-2/12 min-w-2/12 max-w-2/12">
+      <TableCell className="w-3/12 min-w-3/12 max-w-3/12">
         {item.dueDate ? dateTimeFormat(item.dueDate) : "-"}
       </TableCell>
       <TableCell className="w-1/12 min-w-2/12 max-w-1/12">

@@ -54,13 +54,12 @@ const SubjectForm = ({
   const initialSelectedTeachers = data?.teachers?.map((t: any) => t.id) || [];
 
   const lessons = relatedData?.lessons || [];
-  const classes = relatedData?.classes || [];
   const teachers = relatedData?.teachers || [];
+  const classes = relatedData?.classes || [];
 
   const form = useForm<Inputs>({
     resolver: zodResolver(subjectFormSchema),
     defaultValues: {
-      id: data?.id || null,
       name: data?.name || "",
       description: data?.description || "",
     },

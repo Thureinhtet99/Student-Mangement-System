@@ -81,7 +81,6 @@ model Parent {
 model Class {
   id        Int      @id @default(autoincrement())
   name      String   @unique
-  capacity  Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

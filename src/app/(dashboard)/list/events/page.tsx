@@ -20,10 +20,10 @@ const renderRow = async (item: EventListType) => {
       <TableCell className="w-3/12 min-w-3/12 max-w-3/12">
         {item.name}
       </TableCell>
-      <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
+      <TableCell className="hidden md:table-cell w-1/12 min-w-1/12 max-w-1/12">
         {item.class?.name || "-"}
       </TableCell>
-      <TableCell className="w-3/12 min-w-3/12 max-w-3/12 text-xs">
+      <TableCell className="hidden md:table-cell w-3/12 min-w-3/12 max-w-3/12 text-xs">
         {item?.description ? (
           <span>
             {item?.description?.length > 50
@@ -34,7 +34,7 @@ const renderRow = async (item: EventListType) => {
           <span>-</span>
         )}
       </TableCell>
-      <TableCell className="hidden md:table-cell w-2/12 min-w-2/12 max-w-2/12">
+      <TableCell className="w-2/12 min-w-2/12 max-w-2/12">
         {item?.startTime ? dateTimeFormat(item?.startTime) : "-"}
       </TableCell>
       <TableCell className="hidden lg:table-cell w-2/12 min-w-2/12 max-w-2/12">

@@ -1,5 +1,4 @@
 import { lessonColumns } from "@/data/columns";
-import FormModal from "@/components/FormModal";
 import { LessonListType } from "@/types";
 import { TableCell, TableRow } from "@/components/ui/table";
 import TableCard from "@/components/TableCard";
@@ -45,7 +44,7 @@ const LessonListPage = async ({
   const { page, ...queryParams } = resolvedSearchParams;
   const p = page ? parseInt(page) : 1;
 
-  const { sessionClaims } = await auth();
+  const { userId, sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
   const searchCondition = queryParams.search
@@ -73,9 +72,17 @@ const LessonListPage = async ({
     role === "admin"
       ? searchCondition
       : {
-          AND: [searchCondition].filter(
-            (condition) => Object.keys(condition).length > 0
-          ), // Remove empty conditions
+          AND: [
+            {
+              // Teacher
+              subject: {
+                class: {
+                  teacherId: userId as string,
+                },
+              },
+            },
+            searchCondition,
+          ].filter((condition) => Object.keys(condition).length > 0), // Remove empty conditions
         };
 
   const [lessons, count] = await prisma.$transaction([

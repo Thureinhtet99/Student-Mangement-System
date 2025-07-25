@@ -110,26 +110,42 @@ const AttendanceForm = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Student</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || ""}
-                    >
+                    {type === "create" ? (
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || ""}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a student" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {students.map((student: any) => (
+                            <SelectItem
+                              key={student.id}
+                              value={student.id.toString()}
+                            >
+                              {student.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a student" />
-                        </SelectTrigger>
+                        <Input
+                          type="text"
+                          value={
+                            students.find(
+                              (s: any) => s.id.toString() === field.value
+                            )?.name || ""
+                          }
+                          disabled
+                          readOnly
+                          className="bg-muted"
+                        />
                       </FormControl>
-                      <SelectContent>
-                        {students.map((student: any) => (
-                          <SelectItem
-                            key={student.id}
-                            value={student.id.toString()}
-                          >
-                            {student.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

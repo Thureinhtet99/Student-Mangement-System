@@ -61,7 +61,7 @@ const ParentForm = ({
 
   const handleReset = () => {
     form.reset();
-    if (type === "update") {
+    if (type === "create" || "update") {
       setSelectedStudents(initialSelectedStudents);
     }
   };

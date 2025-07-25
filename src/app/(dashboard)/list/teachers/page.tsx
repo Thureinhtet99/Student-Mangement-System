@@ -1,8 +1,6 @@
 import FormContainer from "@/components/FormContainer";
 import { TeacherListType } from "@/types";
-import { Eye } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { teacherColumns } from "@/data/columns";
@@ -15,6 +13,7 @@ import { ROUTE_CONFIG } from "@/configs/appConfig";
 import TableCard from "@/components/TableCard";
 import { getSortOrder } from "@/libs/utils";
 import BadgeList from "@/components/BadgeList";
+import EyeButton from "@/components/EyeButton";
 
 const renderRow = async (item: TeacherListType) => {
   const { sessionClaims } = await auth();
@@ -35,7 +34,13 @@ const renderRow = async (item: TeacherListType) => {
             </AvatarFallback>
           </Avatar>
           <div>
-            <p>{item.name}</p>
+            <Link
+              href={`${ROUTE_CONFIG.TEACHER_LIST}/${item.id}`}
+              className="md:hidden font-medium hover:underline"
+            >
+              {item.name}
+            </Link>
+            <p className="hidden md:block">{item.name}</p>
             <p className="text-xs text-muted-foreground hidden md:table-cell">
               {item?.email || "-"}
             </p>
@@ -58,14 +63,7 @@ const renderRow = async (item: TeacherListType) => {
       </TableCell>
       <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
         <div className="flex justify-end items-center md:gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <Link
-              href={`${ROUTE_CONFIG.TEACHER_LIST}/${item.id}`}
-              aria-label="View details"
-            >
-              <Eye className="h-4 w-4" />
-            </Link>
-          </Button>
+          <EyeButton href={`${ROUTE_CONFIG.TEACHER_LIST}/${item.id}`} />
           {role === "admin" && (
             <>
               <FormContainer table="teacher" type="update" data={item} />

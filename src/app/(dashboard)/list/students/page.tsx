@@ -2,7 +2,6 @@ import Link from "next/link";
 import { studentColumns } from "@/data/columns";
 import { Eye, Mars, Venus } from "lucide-react";
 import { StudentListType } from "@/types";
-import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import TableCard from "@/components/TableCard";
@@ -14,6 +13,7 @@ import { Prisma } from "@prisma/client";
 import FormContainer from "@/components/FormContainer";
 import { ROUTE_CONFIG } from "@/configs/appConfig";
 import { getSortOrder } from "@/libs/utils";
+import EyeButton from "@/components/EyeButton";
 
 const renderRow = async (item: StudentListType) => {
   const { sessionClaims } = await auth();
@@ -69,19 +69,7 @@ const renderRow = async (item: StudentListType) => {
       </TableCell>
       <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
         <div className="flex justify-end items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden md:flex"
-            asChild
-          >
-            <Link
-              href={`${ROUTE_CONFIG.STUDENT_LIST}/${item.id}`}
-              aria-label="View details"
-            >
-              <Eye className="h-4 w-4" />
-            </Link>
-          </Button>
+          <EyeButton href={`${ROUTE_CONFIG.STUDENT_LIST}/${item.id}`} />
           {role === "admin" && (
             <>
               <FormContainer table="student" type="update" data={item} />

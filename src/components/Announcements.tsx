@@ -50,12 +50,21 @@ const Announcements = async () => {
 
   const announcements = await prisma.announcement.findMany({
     where: whereClause,
-    take: 3,
     orderBy: { date: "desc" },
+    take: 5,
   });
 
   return (
     <div className="h-full">
+      <div className="flex justify-between items-center mb-2">
+        <h1 className="text-lg font-semibold text-gray-800">Announcements</h1>
+        <Link
+          href={ROUTE_CONFIG.ANNOUNCEMENT_LIST}
+          className="text-sm text-gray-500 hover:text-gray-800 transition-colors"
+        >
+          View All
+        </Link>
+      </div>
       <div className="space-y-4 py-2">
         {announcements.length > 0 ? (
           announcements.map((announce) => (
@@ -67,7 +76,6 @@ const Announcements = async () => {
                 title={announce.name}
                 description={announce.description || ""}
                 date={announce.date || new Date()}
-                type="announcement"
               />
             </div>
           ))

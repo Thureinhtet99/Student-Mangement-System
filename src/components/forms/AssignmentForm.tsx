@@ -48,7 +48,7 @@ const AssignmentForm = ({
     defaultValues: {
       name: data?.name || "",
       dueDate: data?.dueDate ? new Date(data.dueDate) : undefined,
-      subjectId: data?.subjectId || undefined,
+      subjectId: data?.subjectId || "",
     },
   });
 
@@ -124,7 +124,7 @@ const AssignmentForm = ({
                   <FormLabel>Subjects</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    value={field.value ? String(field.value) : undefined}
+                    value={field.value ? String(field.value) : ""}
                   >
                     <FormControl>
                       <SelectTrigger>

@@ -87,11 +87,7 @@ export const parentColumns = [
 
 export const classColumns = [
   { header: "Name", accessor: "name" },
-  {
-    header: "Capacity",
-    accessor: "capacity",
-    className: "hidden md:table-cell",
-  },
+
   {
     header: "Teacher",
     accessor: "teacher",
@@ -124,9 +120,9 @@ export const subjectColumns = [
     className: "hidden md:table-cell",
   },
   {
-    header: "Classes",
-    accessor: "classes",
-    className: "hidden md:table-cell",
+    header: "Class",
+    accessor: "class",
+    className: "hidden lg:table-cell",
   },
   {
     header: "Lessons",
@@ -135,7 +131,7 @@ export const subjectColumns = [
   {
     header: "Description",
     accessor: "description",
-    className: "hidden md:table-cell",
+    className: "hidden lg:table-cell",
   },
   {
     header: "Actions",
@@ -169,6 +165,12 @@ export const attendanceColumns = [
     header: "Student name",
     accessor: "name",
   },
+
+  {
+    header: "Class",
+    accessor: "class",
+    className: "hidden md:table-cell",
+  },
   {
     header: "Present",
     accessor: "present",
@@ -176,7 +178,7 @@ export const attendanceColumns = [
   {
     header: "Date",
     accessor: "date",
-    className: "hidden lg:table-cell",
+    className: "hidden md:table-cell",
   },
   {
     header: "Actions",
@@ -271,7 +273,11 @@ export const examResultColumns = [
 export const assignmentResultColumns = [
   { header: "Student", accessor: "student" },
   { header: "Score", accessor: "score" },
-  { header: "Assignment", accessor: "assignment" },
+  {
+    header: "Assignment",
+    accessor: "assignment",
+    className: "hidden md:table-cell",
+  },
   { header: "Comment", accessor: "comment", className: "hidden lg:table-cell" },
   {
     header: "Date",
@@ -293,6 +299,7 @@ export const eventColumns = [
   {
     header: "Class",
     accessor: "class",
+    className: "hidden md:table-cell",
   },
   {
     header: "Description",
@@ -302,7 +309,6 @@ export const eventColumns = [
   {
     header: "Start Time",
     accessor: "start Time",
-    className: "hidden md:table-cell",
   },
   {
     header: "End time",

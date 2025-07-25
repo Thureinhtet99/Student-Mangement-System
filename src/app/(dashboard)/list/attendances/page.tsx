@@ -7,7 +7,6 @@ import { ITEM_PER_PAGE } from "@/libs/settings";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 import { resultSortOrder } from "@/libs/utils";
-
 import { dateFormat } from "@/libs/dataTimeFormat";
 import FormContainer from "@/components/FormContainer";
 import { Badge } from "@/components/ui/badge";
@@ -18,10 +17,13 @@ const renderRow = async (item: AttendanceListType) => {
 
   return (
     <TableRow key={item.id}>
-      <TableCell className="w-2/12 min-w-2/12 max-w-2/12">
+      <TableCell className="w-3/12 min-w-3/12 max-w-3/12">
         {item?.student?.name}
       </TableCell>
-      <TableCell className="hidden md:table-cell w-2/12 min-w-2/12 max-w-2/12">
+      <TableCell className="w-3/12 min-w-3/12 max-w-3/12">
+        {item?.student?.class?.name}
+      </TableCell>
+      <TableCell className="w-3/12 min-w-3/12 max-w-3/12">
         <Badge
           variant="default"
           className={`${
@@ -34,7 +36,7 @@ const renderRow = async (item: AttendanceListType) => {
           {item.present === true ? "present" : "absent"}
         </Badge>
       </TableCell>
-      <TableCell className="hidden md:table-cell w-1/12 min-w-1/12 max-w-1/12">
+      <TableCell className="hidden md:table-cell w-2/12 min-w-2/12 max-w-2/12">
         {dateFormat(item.date)}
       </TableCell>
       <TableCell className="w-1/12 min-w-1/12 max-w-1/12">
@@ -119,7 +121,11 @@ const AttendanceListPage = async ({
     prisma.attendance.findMany({
       where: whereClause,
       include: {
-        student: true,
+        student: {
+          include: {
+            class: true,
+          },
+        },
       },
       orderBy: resultSortOrder(queryParams.sort),
       take: ITEM_PER_PAGE,

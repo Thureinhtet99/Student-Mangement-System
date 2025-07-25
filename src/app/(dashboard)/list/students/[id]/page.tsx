@@ -1,7 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
 import BigCalendar from "@/components/BigCalender";
-import Announcements from "@/components/Announcements";
 import Performance from "@/components/Performance";
 import { Calendar1, Mail, Phone, MapPin, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +11,7 @@ import { getStudentById } from "@/libs/actions";
 import { ROUTE_CONFIG } from "@/configs/appConfig";
 import FormContainer from "@/components/FormContainer";
 import { dateFormat } from "@/libs/dataTimeFormat";
+import { StudentListType } from "@/types";
 
 const SingleStudentPage = async ({
   params,
@@ -297,29 +296,30 @@ const SingleStudentPage = async ({
                     <div className="flex flex-wrap items-end justify-end gap-1 max-w-[200px]">
                       {student?.parent?.students &&
                       student?.parent?.students?.length > 0 ? (
-                        student?.parent?.students.map((sibling, index) => (
-                          <span
-                            key={sibling.id}
-                            className="inline-flex items-center"
-                          >
-                            <Link
-                              href={`${ROUTE_CONFIG.STUDENT_LIST}/${sibling.id}`}
-                              className="font-medium underline text-blue-600 hover:text-blue-800 text-right"
+                        student?.parent?.students.map(
+                          (sibling: StudentListType, index: number) => (
+                            <span
+                              key={sibling.id}
+                              className="inline-flex items-center"
                             >
-                              <span className="text-sm">{sibling.name}</span>
-                            </Link>
-                            {index <
-                              (student?.parent?.students?.length ?? 0) - 1 && (
-                              <span className="text-muted-foreground ml-1">
-                                ,
-                              </span>
-                            )}
-                          </span>
-                        ))
+                              <Link
+                                href={`${ROUTE_CONFIG.STUDENT_LIST}/${sibling.id}`}
+                                className="font-medium underline text-blue-600 hover:text-blue-800 text-right"
+                              >
+                                <span className="text-sm">{sibling.name}</span>
+                              </Link>
+                              {index <
+                                (student?.parent?.students?.length ?? 0) -
+                                  1 && (
+                                <span className="text-muted-foreground ml-1">
+                                  ,
+                                </span>
+                              )}
+                            </span>
+                          )
+                        )
                       ) : (
-                        <span className="font-medium text-muted-foreground">
-                          No siblings
-                        </span>
+                        <span>-</span>
                       )}
                     </div>
                   </div>
@@ -352,9 +352,9 @@ const SingleStudentPage = async ({
             <div className="py-4">
               <div>
                 <h3 className="font-medium mb-3">Recent Results</h3>
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-96 overflow-y-auto">
                   {student?.results && student?.results?.length > 0 ? (
-                    student?.results.slice(-3).map((result, index) => (
+                    student?.results.map((result, index) => (
                       <div
                         key={result.id}
                         className="flex justify-between items-center text-sm p-3 rounded-lg border bg-muted/50"
@@ -377,7 +377,7 @@ const SingleStudentPage = async ({
                     </div>
                   )}
                 </div>
-                {student?.results && student?.results?.length > 0 && (
+                {/* {student?.results && student?.results?.length > 0 && (
                   <>
                     <div className="w-full bg-muted h-2 rounded-full overflow-hidden mt-3">
                       <div
@@ -404,12 +404,11 @@ const SingleStudentPage = async ({
                       /100 Average Score
                     </div>
                   </>
-                )}
+                )} */}
               </div>
             </div>
           </CardContent>
         </Card>
-        
         {/* Performance */}
         {/* <Card>
           <CardContent>
@@ -423,28 +422,16 @@ const SingleStudentPage = async ({
             </div>
           </CardContent>
         </Card> */}
-        
         {/* Announcement */}
-        <Card>
+        {/* <Card>
           <CardContent>
             <div className="py-4">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-medium">Announcements</h3>
-                  <Link
-                    href={ROUTE_CONFIG.ANNOUNCEMENT_LIST}
-                    className="text-sm text-gray-500 hover:text-gray-700 hover:underline transition-colors"
-                  >
-                    View All
-                  </Link>
-                </div>
-                <div className="space-y-3">
-                  <Announcements />
-                </div>
+              <div className="space-y-3">
+                <Announcements />
               </div>
             </div>
           </CardContent>
-        </Card>{" "}
+        </Card> */}
       </div>
     </div>
   );

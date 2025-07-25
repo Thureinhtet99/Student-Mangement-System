@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -60,7 +61,6 @@ const ClassForm = ({
     resolver: zodResolver(classFormSchema),
     defaultValues: {
       name: data?.name || "",
-      capacity: data?.capacity || 0,
       teacherId: data?.teacherId || "",
     },
   });
@@ -134,22 +134,28 @@ const ClassForm = ({
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Capacity */}
-              <FormField
-                control={form.control}
-                name="capacity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Capacity</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="30" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              {/* Students */}
+              <MultiSelectBox
+                name="student"
+                subject="class"
+                verb="including"
+                items={students}
+                selectedItems={selectedStudents}
+                setSelectedItems={setSelectedStudents}
+              />
+
+              {/* Subjects */}
+              <MultiSelectBox
+                name="subject"
+                subject="class"
+                verb="including"
+                items={subjects}
+                selectedItems={selectedSubjects}
+                setSelectedItems={setSelectedSubjects}
               />
 
               {/* Teacher */}
+
               <FormField
                 control={form.control}
                 name="teacherId"
@@ -181,28 +187,11 @@ const ClassForm = ({
                       </SelectContent>
                     </Select>
                     <FormMessage />
+                    <FormDescription>
+                      Select the teacher this class will be including
+                    </FormDescription>
                   </FormItem>
                 )}
-              />
-
-              {/* Subjects */}
-              <MultiSelectBox
-                name="subject"
-                subject="class"
-                verb="including"
-                items={subjects}
-                selectedItems={selectedSubjects}
-                setSelectedItems={setSelectedSubjects}
-              />
-
-              {/* Students */}
-              <MultiSelectBox
-                name="student"
-                subject="class"
-                verb="including"
-                items={students}
-                selectedItems={selectedStudents}
-                setSelectedItems={setSelectedStudents}
               />
             </div>
 

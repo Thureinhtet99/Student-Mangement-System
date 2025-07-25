@@ -1,5 +1,8 @@
 "use client";
 
+import { days } from "@/data/data";
+import { AttendanceListType } from "@/types";
+import { useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -10,51 +13,49 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import CustomTitle from "./CustomTitle";
 
-const data = [
-  {
-    name: "Mon",
-    present: 60,
-    absent: 40,
-  },
-  {
-    name: "Tue",
-    present: 55,
-    absent: 30,
-  },
-  {
-    name: "Wed",
-    present: 50,
-    absent: 35,
-  },
-  {
-    name: "Thu",
-    present: 45,
-    absent: 25,
-  },
-  {
-    name: "Fri",
-    present: 60,
-    absent: 15,
-  },
-  {
-    name: "Sat",
-    present: 20,
-    absent: 10,
-  },
-  {
-    name: "Sun",
-    present: 10,
-    absent: 5,
-  },
-];
+const weekdays = days.filter((day) => day !== "Sat" && day !== "Sun");
 
-const AttendanceChart = () => {
+const groupAttendanceByDay = (attendances: AttendanceListType[]) => {
+  const result = weekdays.map((day) => ({
+    name: day,
+    present: 0,
+    absent: 0,
+  }));
+
+  attendances?.forEach((attendance) => {
+    const date = new Date(attendance.date);
+    const dayIndex = date.getDay();
+    const name = days[dayIndex];
+
+    if (weekdays.includes(name)) {
+      const entry = result.find((d) => d.name === name);
+      console.log("entry", entry || "no");
+
+      if (entry) {
+        if (attendance.present === true) {
+          entry.present += 1;
+        } else {
+          entry.absent += 1;
+        }
+      }
+    }
+  });
+
+  return result;
+};
+
+const AttendanceChart = ({
+  attendances,
+}: {
+  attendances: AttendanceListType[];
+}) => {
+  const data = useMemo(() => groupAttendanceByDay(attendances), [attendances]);
+
   return (
     <div className="bg-white rounded-lg w-full h-full p-4">
       {/* TITLE */}
-      <CustomTitle name="Attendance" fontSize={0} marginY={0} />
+      <h1 className="font-semibold">Student&apos;s Attendance</h1>
 
       {/* CHART */}
       <ResponsiveContainer width="100%" height="90%">
@@ -63,7 +64,7 @@ const AttendanceChart = () => {
           <XAxis
             dataKey="name"
             axisLine={false}
-            tick={{ fill: "#48cae4" }}
+            // tick={{ fill: "#48cae4" }}
             tickLine={false}
           />
           <YAxis axisLine={false} tick={{ fill: "#000" }} tickLine={false} />
@@ -77,13 +78,13 @@ const AttendanceChart = () => {
           />
           <Bar
             dataKey="present"
-            fill="#ade8f4"
+            fill="#025699"
             legendType="circle"
             radius={[10, 10, 0, 0]}
           />
           <Bar
             dataKey="absent"
-            fill="#044bbd"
+            fill="#219dd7"
             legendType="circle"
             radius={[10, 10, 0, 0]}
           />

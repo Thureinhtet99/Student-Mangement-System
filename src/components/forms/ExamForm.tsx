@@ -53,7 +53,7 @@ const ExamForm = ({
       description: data?.description || "",
       startTime: data?.startTime ? new Date(data.startTime) : undefined,
       endTime: data?.endTime ? new Date(data.endTime) : undefined,
-      subjectId: data?.subjectId || undefined,
+      subjectId: data?.subjectId || "",
     },
   });
 
@@ -80,9 +80,7 @@ const ExamForm = ({
       onClose?.();
     },
     onError: () => {
-      toast.error(
-        `Failed to ${type === "create" ? "create" : "update"} exam`
-      );
+      toast.error(`Failed to ${type === "create" ? "create" : "update"} exam`);
     },
   });
 
@@ -129,7 +127,7 @@ const ExamForm = ({
                   <FormLabel>Subject</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    value={field.value ? String(field.value) : undefined}
+                    value={field.value ? String(field.value) : ""}
                   >
                     <FormControl>
                       <SelectTrigger>
